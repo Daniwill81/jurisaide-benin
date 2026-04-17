@@ -16,7 +16,8 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    full_name: str
+    first_name: str
+    last_name: str
     passport_number: Optional[str] = None
 
 class GoogleAuth(BaseModel):
