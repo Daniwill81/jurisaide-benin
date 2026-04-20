@@ -8,13 +8,14 @@ from beanie import Document, operators
 
 from sap.beanie.mixins import PasswordMixin
 
-from api.models.enums import RoleEnum
+from api.models.enums import RoleEnum, SexEnum
 
 
 class User(PasswordMixin, Document):
     role: RoleEnum
     first_name: str
     last_name: str
+    sex: SexEnum | None = None
     email: pydantic.EmailStr
     auth_key: str | None = None
     is_active: bool = True

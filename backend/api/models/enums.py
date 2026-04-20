@@ -12,6 +12,13 @@ class RoleEnum(str, enum.Enum):
     ANONYMOUS = "ANONYMOUS"  # Unidentified user
 
 
+class SexEnum(str, enum.Enum):
+    """The sex of the person."""
+
+    M = "M"  # Male
+    F = "F"  # Female
+
+
 class WorkerCategory(str, enum.Enum):
     OUVRIER = "ouvrier"
     EMPLOYE = "employe"

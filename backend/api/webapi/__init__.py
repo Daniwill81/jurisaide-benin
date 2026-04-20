@@ -9,7 +9,9 @@ The router in routes.py is referred as the main router for this app.
 from fastapi import APIRouter
 
 from .auth import router as router_auth
+from .user import router as router_user
 
 router_api = APIRouter(redirect_slashes=True)
 
 router_api.include_router(router_auth, prefix="/auth/user_token", tags=["auth"])
+router_api.include_router(router_user, prefix="/users", tags=["users"])
