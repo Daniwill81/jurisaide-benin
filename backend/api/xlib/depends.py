@@ -1,11 +1,10 @@
 from typing import Any, Optional
 
+from api.models.user.user import User
+from api.xlib.auth import ALGORITHM, SECRET_KEY
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-
-from api.models.user.user import User
-from api.xlib.auth import ALGORITHM, SECRET_KEY
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 

@@ -25,9 +25,8 @@ IMPORTANT:
 
 from datetime import datetime
 
-from dateutil.relativedelta import relativedelta
-
 from api.models.enums import WorkerCategory
+from dateutil.relativedelta import relativedelta
 
 
 def calculate_seniority(start_date: datetime, end_date: datetime) -> float:

@@ -4,20 +4,16 @@ Calculation WebAPI.
 RESTful API endpoints for calculation operations.
 """
 
-from fastapi import APIRouter, Depends, Request, status
-
-from sap.fastapi.pagination import CursorInfo, PaginatedData
-
+from api.controllers.calcul import CalculationController
 from api.models import User
 from api.models.calcul import CalculationRequest
 from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
-from api.serializers.calcul import (
-    CalculationSerializer,
-    WriteCalculationSerializer,
-)
 from api.query.calcul import CalculationQuery
-from api.controllers.calcul import CalculationController
+from api.serializers.calcul import (CalculationSerializer,
+                                    WriteCalculationSerializer)
+from fastapi import APIRouter, Depends, Request, status
+from sap.fastapi.pagination import CursorInfo, PaginatedData
 
 router = APIRouter()
 
@@ -27,7 +23,7 @@ async def create(
     request: Request,
     serializer_write: WriteCalculationSerializer,
     request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
-) -> dict:
+) -> CalculationSerializer:
     """
     Create a new calculation request and return the calculated result.
 
@@ -44,25 +40,13 @@ async def create(
     # Get the calculation result
     result = await CalculationController.get_calculation_result(calculation)
 
-    return {
-        "id": str(calculation.id),
-        "employee_name": calculation.employee_name,
-        "employee_email": calculation.employee_email,
-        "seniority_years": result.seniority_years,
-        "severance_pay": result.severance_pay,
-        "notice_period_pay": result.notice_period_pay,
-        "leave_pay": result.leave_pay,
-        "total": result.total,
-        "breakdown": result.breakdown,
-        "articles": result.articles,
-        "created_at": calculation.created_at,
-    }
+    return CalculationSerializer.read_with_result(calculation, result)
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
 async def listing(
     request: Request,
-    request_user: User = Depends(user_auth.require(RoleEnum.get_list_authenticated())),
+    request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
 ) -> PaginatedData[CalculationSerializer]:
     """
     List all calculations created by the authenticated user.
@@ -95,7 +79,7 @@ async def retrieve(
     request: Request,
     pk: str,
     request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
-) -> dict:
+) -> CalculationSerializer:
     """
     Retrieve a specific calculation request with its result.
 
@@ -110,32 +94,7 @@ async def retrieve(
 
     result = await CalculationController.get_calculation_result(calculation)
 
-    return {
-        "id": str(calculation.id),
-        "employee_name": calculation.employee_name,
-        "employee_email": calculation.employee_email,
-        "employee_id": calculation.employee_id,
-        "start_date": calculation.start_date.date(),
-        "end_date": calculation.end_date.date(),
-        "avg_salary": calculation.avg_salary,
-        "daily_salary": calculation.daily_salary,
-        "category": calculation.category.value,
-        "contract_type": calculation.contract_type.value,
-        "termination_reason": calculation.termination_reason.value if calculation.termination_reason else None,
-        "remaining_leave_days": calculation.remaining_leave_days,
-        "annual_leave_entitlement": calculation.annual_leave_entitlement,
-        "status": calculation.status,
-        "seniority_years": result.seniority_years,
-        "severance_pay": result.severance_pay,
-        "notice_period_pay": result.notice_period_pay,
-        "leave_pay": result.leave_pay,
-        "total": result.total,
-        "breakdown": result.breakdown,
-        "articles": result.articles,
-        "created_at": calculation.created_at,
-        "updated_at": calculation.updated_at,
-        "notes": calculation.notes,
-    }
+    return CalculationSerializer.read_with_result(calculation, result)
 
 
 @router.put("/{pk}/", status_code=status.HTTP_202_ACCEPTED)
@@ -144,7 +103,7 @@ async def update(
     pk: str,
     serializer_write: WriteCalculationSerializer,
     request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
-) -> dict:
+) -> CalculationSerializer:
     """Update a calculation request."""
     calculation = await CalculationRequest.get_or_404(pk)
 
@@ -159,19 +118,7 @@ async def update(
 
     result = await CalculationController.get_calculation_result(updated_calculation)
 
-    return {
-        "id": str(updated_calculation.id),
-        "employee_name": updated_calculation.employee_name,
-        "employee_email": updated_calculation.employee_email,
-        "seniority_years": result.seniority_years,
-        "severance_pay": result.severance_pay,
-        "notice_period_pay": result.notice_period_pay,
-        "leave_pay": result.leave_pay,
-        "total": result.total,
-        "breakdown": result.breakdown,
-        "articles": result.articles,
-        "updated_at": updated_calculation.updated_at,
-    }
+    return CalculationSerializer.read_with_result(updated_calculation, result)
 
 
 @router.delete("/{pk}/", status_code=status.HTTP_204_NO_CONTENT)

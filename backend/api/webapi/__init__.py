@@ -9,8 +9,8 @@ The router in routes.py is referred as the main router for this app.
 from fastapi import APIRouter
 
 from .auth import router as router_auth
-from .user import router as router_user
 from .calcul import router as router_calcul
+from .user import router as router_user
 
 router_api = APIRouter(redirect_slashes=True)
 

@@ -8,35 +8,19 @@ import datetime
 from typing import Any, Optional
 
 import pydantic
-
-from sap.fastapi import ObjectSerializer, WriteObjectSerializer
-
 from api.models.calcul import CalculationRequest, CalculationResult
-from api.models.enums import WorkerCategory, ContractType, TerminationReason
-from api.xlib.labor_code import (
-    calculate_seniority,
-    calculate_severance_pay,
-    calculate_notice_period_pay,
-    calculate_leave_pay,
-)
-
-
-class CalculationResultSerializer(pydantic.BaseModel):
-    """Serialize the calculation result for retrieval."""
-
-    id: str
-    seniority_years: float
-    severance_pay: float
-    notice_period_pay: float
-    leave_pay: float
-    total: float
-    articles: dict
-    breakdown: dict
-    created_at: datetime.datetime
+from api.models.enums import ContractType, TerminationReason, WorkerCategory
+from api.xlib.labor_code import (calculate_leave_pay,
+                                 calculate_notice_period_pay,
+                                 calculate_seniority, calculate_severance_pay)
+from sap.fastapi import ObjectSerializer, WriteObjectSerializer
 
 
 class CalculationSerializer(ObjectSerializer[CalculationRequest]):
-    """Serialize the `CalculationRequest` object for retrieve and listing."""
+    """Serialize the `CalculationRequest` object for retrieve and listing.
+
+    Includes calculation results when available.
+    """
 
     id: str
     employee_name: str
@@ -45,6 +29,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     start_date: datetime.date
     end_date: datetime.date
     avg_salary: float
+    daily_salary: Optional[float] = None
     category: WorkerCategory
     contract_type: ContractType = ContractType.CDI
     termination_reason: Optional[TerminationReason] = None
@@ -55,6 +40,39 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     updated_at: datetime.datetime
     notes: Optional[str] = None
 
+    # Calculated fields (populated by controller)
+    seniority_years: Optional[float] = None
+    severance_pay: Optional[float] = None
+    notice_period_pay: Optional[float] = None
+    leave_pay: Optional[float] = None
+    total: Optional[float] = None
+    breakdown: Optional[dict] = None
+    articles: Optional[dict] = None
+
+    @classmethod
+    def read_with_result(
+        cls, instance: CalculationRequest, result: "CalculationResult"
+    ) -> "CalculationSerializer":
+        """
+        Read serializer with enriched calculation results.
+
+        Args:
+            instance: The CalculationRequest database object
+            result: The CalculationResult with calculated values
+
+        Returns:
+            CalculationSerializer instance with calculated fields populated
+        """
+        serializer = cls.read(instance)
+        serializer.seniority_years = result.seniority_years
+        serializer.severance_pay = result.severance_pay
+        serializer.notice_period_pay = result.notice_period_pay
+        serializer.leave_pay = result.leave_pay
+        serializer.total = result.total
+        serializer.breakdown = result.breakdown
+        serializer.articles = result.articles
+        return serializer
+
 
 class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     """Serialize the `CalculationRequest` object for create and update."""
@@ -64,7 +82,9 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     employee_id: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
-    avg_salary: float = pydantic.Field(gt=0, description="Salaire moyen mensuel en FCFA")
+    avg_salary: float = pydantic.Field(
+        gt=0, description="Salaire moyen mensuel en FCFA"
+    )
     daily_salary: Optional[float] = None
     category: WorkerCategory
     contract_type: ContractType = ContractType.CDI
@@ -78,7 +98,9 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     @pydantic.field_validator("end_date")
     @classmethod
-    def validate_end_date(cls, value: datetime.date, info: pydantic.ValidationInfo) -> datetime.date:
+    def validate_end_date(
+        cls, value: datetime.date, info: pydantic.ValidationInfo
+    ) -> datetime.date:
         """Verify that end_date is after start_date."""
         if "start_date" in info.data and value <= info.data["start_date"]:
             raise ValueError("La date de fin doit être après la date de début.")
@@ -86,7 +108,9 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     @pydantic.field_validator("daily_salary", mode="before")
     @classmethod
-    def calculate_daily_salary(cls, value: Optional[float], info: pydantic.ValidationInfo) -> Optional[float]:
+    def calculate_daily_salary(
+        cls, value: Optional[float], info: pydantic.ValidationInfo
+    ) -> Optional[float]:
         """Calculate daily salary if not provided (monthly salary / 26)."""
         if value is None and "avg_salary" in info.data:
             return info.data["avg_salary"] / 26.0
@@ -117,7 +141,9 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
         # Calculate components
         severance = calculate_severance_pay(self.avg_salary, seniority_years)
         notice_period = calculate_notice_period_pay(self.avg_salary, self.category)
-        leave = calculate_leave_pay(self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days)
+        leave = calculate_leave_pay(
+            self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days
+        )
 
         total = severance + notice_period + leave
 
@@ -199,12 +225,16 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
             "employee_name": self.employee_name,
             "employee_email": self.employee_email,
             "employee_id": self.employee_id,
-            "start_date": datetime.datetime.combine(
-                self.start_date, datetime.time()
-            ) if isinstance(self.start_date, datetime.date) else self.start_date,
-            "end_date": datetime.datetime.combine(
-                self.end_date, datetime.time()
-            ) if isinstance(self.end_date, datetime.date) else self.end_date,
+            "start_date": (
+                datetime.datetime.combine(self.start_date, datetime.time())
+                if isinstance(self.start_date, datetime.date)
+                else self.start_date
+            ),
+            "end_date": (
+                datetime.datetime.combine(self.end_date, datetime.time())
+                if isinstance(self.end_date, datetime.date)
+                else self.end_date
+            ),
             "avg_salary": self.avg_salary,
             "daily_salary": self.daily_salary or (self.avg_salary / 26.0),
             "category": self.category,

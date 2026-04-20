@@ -9,16 +9,14 @@ Learn more: https://fastapi.tiangolo.com/tutorial/middleware/
 import typing
 
 from app.models import Campaign, Preference, User
+from AppMain.settings import AppSettings, logger_access, templates
 from fastapi import Request
 from fastapi.exceptions import HTTPException
+from sap.fastapi import Flash
+from sap.fastapi.auth import JWTAuth
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from starlette.types import Message
-
-from sap.fastapi import Flash
-from sap.fastapi.auth import JWTAuth
-
-from AppMain.settings import AppSettings, logger_access, templates
 
 jwt_auth = JWTAuth(user_model=User)
 
@@ -36,14 +34,17 @@ class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
         request._receive = receive
 
     async def dispatch(
-        self, request: Request, call_next: typing.Callable[[Request], typing.Awaitable[Response]]
+        self,
+        request: Request,
+        call_next: typing.Callable[[Request], typing.Awaitable[Response]],
     ) -> Response:
         """Load vars and launch call_next."""
 
         if (
             "/pages/auth/login" not in str(request.url)
             and request.method not in ["GET", "HEAD", "OPTIONS"]
-            and request.headers.get("Content-Type") in ["application/x-www-form-urlencoded", "application/json"]
+            and request.headers.get("Content-Type")
+            in ["application/x-www-form-urlencoded", "application/json"]
         ):
             await self.set_body(request)
             user_email = request.cookies.get("user_email")

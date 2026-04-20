@@ -7,8 +7,8 @@ Handles business logic for calculation requests and results.
 from datetime import datetime
 from typing import Optional
 
-from api.models.calcul import CalculationRequest, CalculationResult
 from api.models import User
+from api.models.calcul import CalculationRequest, CalculationResult
 from api.serializers.calcul import WriteCalculationSerializer
 
 
@@ -26,12 +26,16 @@ class CalculationController:
             "employee_name": serializer.employee_name,
             "employee_email": serializer.employee_email,
             "employee_id": serializer.employee_id,
-            "start_date": datetime.combine(
-                serializer.start_date, datetime.min.time()
-            ) if hasattr(serializer.start_date, 'day') else serializer.start_date,
-            "end_date": datetime.combine(
-                serializer.end_date, datetime.min.time()
-            ) if hasattr(serializer.end_date, 'day') else serializer.end_date,
+            "start_date": (
+                datetime.combine(serializer.start_date, datetime.min.time())
+                if hasattr(serializer.start_date, "day")
+                else serializer.start_date
+            ),
+            "end_date": (
+                datetime.combine(serializer.end_date, datetime.min.time())
+                if hasattr(serializer.end_date, "day")
+                else serializer.end_date
+            ),
             "avg_salary": serializer.avg_salary,
             "daily_salary": serializer.daily_salary or (serializer.avg_salary / 26.0),
             "category": serializer.category,
@@ -68,22 +72,22 @@ class CalculationController:
         end_dt = calculation.end_date
 
         # Import here to avoid circular imports
-        from api.xlib.labor_code import (
-            calculate_seniority,
-            calculate_severance_pay,
-            calculate_notice_period_pay,
-            calculate_leave_pay,
-        )
+        from api.xlib.labor_code import (calculate_leave_pay,
+                                         calculate_notice_period_pay,
+                                         calculate_seniority,
+                                         calculate_severance_pay)
 
         # Calculate seniority
         seniority_years = calculate_seniority(start_dt, end_dt)
 
         # Calculate components
         severance = calculate_severance_pay(calculation.avg_salary, seniority_years)
-        notice_period = calculate_notice_period_pay(calculation.avg_salary, calculation.category)
+        notice_period = calculate_notice_period_pay(
+            calculation.avg_salary, calculation.category
+        )
         leave = calculate_leave_pay(
             calculation.daily_salary or (calculation.avg_salary / 26.0),
-            calculation.remaining_leave_days
+            calculation.remaining_leave_days,
         )
 
         total = severance + notice_period + leave
@@ -94,13 +98,17 @@ class CalculationController:
             "severance_pay": {
                 "amount": round(severance, 2),
                 "formula": "Selon Article 44 - Loi 98-004",
-                "details": CalculationController._get_severance_details(seniority_years),
+                "details": CalculationController._get_severance_details(
+                    seniority_years
+                ),
             },
             "notice_period_pay": {
                 "amount": round(notice_period, 2),
                 "formula": "Selon Article 53 - Loi 98-004",
                 "category": calculation.category.value,
-                "months": CalculationController._get_notice_months(calculation.category),
+                "months": CalculationController._get_notice_months(
+                    calculation.category
+                ),
             },
             "leave_pay": {
                 "amount": round(leave, 2),

@@ -12,32 +12,34 @@ The API is structured with  Representational state transfer architecture:
 https://en.wikipedia.org/wiki/Representational_state_transfer
 """
 
-from fastapi import APIRouter, Request, status
-
 from api.models import User
-from api.serializers.auth import (
-    AuthTokenSerializer,
-    ForgotPasswordSerializer,
-    LoginAuthSerializer,
-    ResetPasswordSerializer,
-)
+from api.serializers.auth import (AuthTokenSerializer,
+                                  ForgotPasswordSerializer,
+                                  LoginAuthSerializer, ResetPasswordSerializer)
 from api.serializers.user import UserSerializer
+from fastapi import APIRouter, Request, status
 
 router = APIRouter()
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create(request: Request, serializer_write: LoginAuthSerializer) -> AuthTokenSerializer:
+async def create(
+    request: Request, serializer_write: LoginAuthSerializer
+) -> AuthTokenSerializer:
     """Create an authentication token."""
     await serializer_write.run_async_validators(request=request)
     assert (user := serializer_write.instance)
     await user.generate_auth_key()
     assert user.auth_key
-    return AuthTokenSerializer(id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user))
+    return AuthTokenSerializer(
+        id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user)
+    )
 
 
 @router.post("/reset_password/", status_code=status.HTTP_202_ACCEPTED)
-async def reset_password(request: Request, serializer_write: ResetPasswordSerializer) -> AuthTokenSerializer:
+async def reset_password(
+    request: Request, serializer_write: ResetPasswordSerializer
+) -> AuthTokenSerializer:
     """Let users to set a new password.
 
     This is also used to confirm registration of new users.
@@ -47,11 +49,15 @@ async def reset_password(request: Request, serializer_write: ResetPasswordSerial
     user = await serializer_write.update()
     await user.generate_auth_key()
     assert user.auth_key
-    return AuthTokenSerializer(id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user))
+    return AuthTokenSerializer(
+        id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user)
+    )
 
 
 @router.post("/forgot_password/", status_code=status.HTTP_202_ACCEPTED)
-async def forgot_password(request: Request, serializer_write: ForgotPasswordSerializer) -> dict[str, str]:
+async def forgot_password(
+    request: Request, serializer_write: ForgotPasswordSerializer
+) -> dict[str, str]:
     """Let the user request for a link to reset their password."""
     await serializer_write.run_async_validators(request=request)
     user = await serializer_write.update()

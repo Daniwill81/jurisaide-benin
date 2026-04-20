@@ -1,6 +1,6 @@
 """Calculation models."""
 
-from .calcul import CalculationRequest, CalculationResult, AuditTrail
+from .calcul import AuditTrail, CalculationRequest, CalculationResult
 
 __all__ = [
     "CalculationRequest",

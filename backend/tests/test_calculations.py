@@ -6,13 +6,10 @@ Tests calculation logic against legal requirements from Beninese labor law.
 
 from datetime import datetime
 
-from api.xlib.labor_code import (
-    calculate_seniority,
-    calculate_severance_pay,
-    calculate_notice_period_pay,
-    calculate_leave_pay,
-)
 from api.models.enums import WorkerCategory
+from api.xlib.labor_code import (calculate_leave_pay,
+                                 calculate_notice_period_pay,
+                                 calculate_seniority, calculate_severance_pay)
 
 
 class TestSeniority:
@@ -190,10 +187,7 @@ class TestTotalCompensation:
 
         Employee: 8 years, salary 500,000, 10 remaining leave days
         """
-        seniority = calculate_seniority(
-            datetime(2015, 1, 1),
-            datetime(2023, 1, 1)
-        )
+        seniority = calculate_seniority(datetime(2015, 1, 1), datetime(2023, 1, 1))
         assert seniority == 8.0
 
         severance = calculate_severance_pay(500000, seniority)

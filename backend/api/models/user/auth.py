@@ -9,17 +9,15 @@ import binascii
 import typing
 
 import jwt
+from api.models.enums import RoleEnum
+from AppMain.settings import logger
 from beanie import operators
 from fastapi import Request, status
 from fastapi.exceptions import HTTPException
-from starlette.status import HTTP_401_UNAUTHORIZED as HTTP_401
-
 from sap.beanie import Document
 from sap.beanie.exceptions import Object404Error
 from sap.fastapi.auth import BasicAuth
-
-from api.models.enums import RoleEnum
-from AppMain.settings import logger
+from starlette.status import HTTP_401_UNAUTHORIZED as HTTP_401
 
 from .user import User
 
@@ -37,7 +35,9 @@ class UserAuth(BasicAuth):
         """Provide the authenticated user to views that require it."""
         assert self.user_model and issubclass(self.user_model, Document)
 
-        header_auth: str | None = request.headers.get("Authorization") or request.headers.get("X-Beans-Authorization")
+        header_auth: str | None = request.headers.get(
+            "Authorization"
+        ) or request.headers.get("X-Beans-Authorization")
         logger.debug("DEBUGGING HEADERS => %s", str(request.headers))
 
         if not header_auth:
@@ -45,12 +45,16 @@ class UserAuth(BasicAuth):
 
         scheme, credentials = header_auth.split()
         if scheme.lower() != "basic":
-            raise HTTPException(HTTP_401, detail="Only basic authorization is supported")
+            raise HTTPException(
+                HTTP_401, detail="Only basic authorization is supported"
+            )
 
         try:
             decoded = base64.b64decode(credentials).decode("ascii")
         except (ValueError, UnicodeDecodeError, binascii.Error) as exc:
-            raise HTTPException(HTTP_401, detail="Error while decoding basic auth credentials") from exc
+            raise HTTPException(
+                HTTP_401, detail="Error while decoding basic auth credentials"
+            ) from exc
 
         username, _, pwd = decoded.partition(":")
         user_key = username or pwd
@@ -62,9 +66,13 @@ class UserAuth(BasicAuth):
 
         if auth_key:
             try:
-                return await self.user_model.find_one_or_404(operators.Or(operators.Eq(User.auth_key, user_key)))
+                return await self.user_model.find_one_or_404(
+                    operators.Or(operators.Eq(User.auth_key, user_key))
+                )
             except (Object404Error, jwt.exceptions.InvalidTokenError) as exc:
-                raise HTTPException(HTTP_401, detail="Invalid basic auth credentials") from exc
+                raise HTTPException(
+                    HTTP_401, detail="Invalid basic auth credentials"
+                ) from exc
 
         return await self.user_model.get_or_404(user_key)
 
@@ -78,7 +86,10 @@ class UserAuth(BasicAuth):
             user: User = await self.authenticate(request=request)
 
             if not user.has_perms(perms):
-                raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not enough permission to access resource")
+                raise HTTPException(
+                    status.HTTP_403_FORBIDDEN,
+                    detail="Not enough permission to access resource",
+                )
 
             return user
 

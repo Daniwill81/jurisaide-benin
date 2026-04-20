@@ -12,21 +12,21 @@ The API is structured with  Representational state transfer architecture:
 https://en.wikipedia.org/wiki/Representational_state_transfer
 """
 
-from app.query.user import UserQuery
-from fastapi import APIRouter, Depends, Request, status
-
-from sap.fastapi.pagination import CursorInfo, PaginatedData
-
 from api.models import User
 from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
 from api.serializers.user import UserSerializer, WriteUserSerializer
+from app.query.user import UserQuery
+from fastapi import APIRouter, Depends, Request, status
+from sap.fastapi.pagination import CursorInfo, PaginatedData
 
 router = APIRouter()
 
 
 @router.get("/current/", status_code=status.HTTP_200_OK)
-async def current(request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER]))) -> UserSerializer:
+async def current(
+    request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER]))
+) -> UserSerializer:
     """Retrieve the currently authenticated user."""
     return UserSerializer.read(request_user)
 
@@ -34,7 +34,7 @@ async def current(request_user: User = Depends(user_auth.require([RoleEnum.ADMIN
 @router.get("/", status_code=status.HTTP_200_OK)
 async def listing(
     request: Request,
-    request_user: User = Depends(user_auth.require(RoleEnum.get_list_authenticated())),
+    request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
 ) -> PaginatedData[UserSerializer]:
     """Retrieve all user."""
     cursor = CursorInfo(request=request)

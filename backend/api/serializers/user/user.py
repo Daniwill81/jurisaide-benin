@@ -9,11 +9,9 @@ import re
 import typing
 
 import pydantic
-
-from sap.fastapi import ObjectSerializer, WriteObjectSerializer
-
 from api.models import User
 from api.models.enums import RoleEnum, SexEnum
+from sap.fastapi import ObjectSerializer, WriteObjectSerializer
 
 
 class UserSerializer(ObjectSerializer[User]):
@@ -48,11 +46,15 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
     def validate_password(cls, value: str) -> str:
         """Verify that the password fit security criteria"""
         if not re.findall(r"[a-zA-Z]+", value):
-            raise AssertionError("Votre mot de passe doit contenir au moins une lettre.")
+            raise AssertionError(
+                "Votre mot de passe doit contenir au moins une lettre."
+            )
         if not re.findall(r"[0-9]+", value):
             raise AssertionError("Votre mot de passe doit contenir au moins 1 chiffre.")
         if re.match(r"^\w+$", value):
-            raise AssertionError("Votre mot de passe doit contenir au moins 1 caractère spécial.")
+            raise AssertionError(
+                "Votre mot de passe doit contenir au moins 1 caractère spécial."
+            )
         return value
 
     async def run_async_validators(self, **kwargs: typing.Any) -> None:
@@ -67,7 +69,9 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
 
         is_duplicate = await User.find_current(email=self.email)
         if is_duplicate:
-            raise AssertionError("Cet email est déjà rattaché à un compte administrateur existant.")
+            raise AssertionError(
+                "Cet email est déjà rattaché à un compte administrateur existant."
+            )
 
     async def validate_role(self) -> None:
         """Set user role."""

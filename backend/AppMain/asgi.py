@@ -10,23 +10,22 @@ import logging
 import typing
 from contextlib import asynccontextmanager
 
+from api import models
+from api.webapi import router_api
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import RedirectResponse, Response
+from sap.beanie.client import BeanieClient
+from sap.fastapi.middleware import \
+    InitBeanieMiddleware  # , LogServerErrorMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
-
-from sap.beanie.client import BeanieClient
-from sap.fastapi.middleware import InitBeanieMiddleware  # , LogServerErrorMiddleware
-
-from api import models
-from api.webapi import router_api
 
 from .settings import AppSettings, logger
 
@@ -60,7 +59,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Content Security Policy - Strict pour API REST
-        response.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'none'; frame-ancestors 'none'"
+        )
 
         # X-Frame-Options - Empêche l'intégration dans des iframes
         response.headers["X-Frame-Options"] = "DENY"
@@ -81,7 +82,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         # En-têtes de sécurité supplémentaires recommandés
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
+        )
 
         return response
 
@@ -97,11 +100,21 @@ origins = [
 
 # Enable cors
 app.add_middleware(
-    CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Mount static folder
-app.routes.append(Mount(path="/static", app=StaticFiles(directory=AppSettings.APP_DIR / "static"), name="static"))
+app.routes.append(
+    Mount(
+        path="/static",
+        app=StaticFiles(directory=AppSettings.APP_DIR / "static"),
+        name="static",
+    )
+)
 
 # Mount sub-apps routes
 
@@ -123,13 +136,19 @@ async def root() -> dict[str, str]:
 @app_api.get("/doc", include_in_schema=False)
 async def custom_swagger_ui_html(request: Request) -> HTMLResponse:
     """Protect swagger doc endpoint."""
-    return get_swagger_ui_html(openapi_url="/api/v1/openapi.json", title=f"{AppSettings.PROJ_NAME} - Documentation")
+    return get_swagger_ui_html(
+        openapi_url="/api/v1/openapi.json",
+        title=f"{AppSettings.PROJ_NAME} - Documentation",
+    )
 
 
 @app_api.get("/docs", include_in_schema=False)
 async def custom_redoc_html(request: Request) -> HTMLResponse:
     """Protect redoc doc endpoint."""
-    return get_redoc_html(openapi_url="/api/v1/openapi.json", title=f"{AppSettings.PROJ_NAME} - Documentation")
+    return get_redoc_html(
+        openapi_url="/api/v1/openapi.json",
+        title=f"{AppSettings.PROJ_NAME} - Documentation",
+    )
 
 
 app_api.include_router(router_api)
@@ -147,19 +166,29 @@ for model_name in models.__all__:
 
 
 # Register middleware
-app.add_middleware(InitBeanieMiddleware, mongo_params=AppSettings.MONGO, document_models=document_models)
-app_pages.add_middleware(SessionMiddleware, session_cookie="starlette", secret_key=AppSettings.CRYPTO_SECRET)
+app.add_middleware(
+    InitBeanieMiddleware,
+    mongo_params=AppSettings.MONGO,
+    document_models=document_models,
+)
+app_pages.add_middleware(
+    SessionMiddleware, session_cookie="starlette", secret_key=AppSettings.CRYPTO_SECRET
+)
 
 
 # Events to run on startups
 async def initialize_beanie() -> None:
     """Initialize beanie on startup."""
-    await BeanieClient.init(mongo_params=AppSettings.MONGO, document_models=document_models)
+    await BeanieClient.init(
+        mongo_params=AppSettings.MONGO, document_models=document_models
+    )
 
 
 # Always log exception
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     """Log all request validation errors to a file."""
     logger.exception(exc.errors())
     return await request_validation_exception_handler(request=request, exc=exc)

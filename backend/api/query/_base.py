@@ -5,7 +5,6 @@ from app.models import User
 from app.xlib.utils import extract_filter_params
 from beanie.odm.queries.find import FindMany
 from fastapi.datastructures import QueryParams
-
 from sap.beanie import prepare_search_string
 from sap.beanie.document import DocT
 from sap.beanie.exceptions import Object404Error
@@ -34,7 +33,9 @@ class Query(typing.Generic[DocT]):
 
     def get_search(self, search_text: str) -> FindMany[DocT]:
         """Apply a search for initial queryset."""
-        return self.get_qs().find({"$text": {"$search": prepare_search_string(search_text)}}, limit=50)
+        return self.get_qs().find(
+            {"$text": {"$search": prepare_search_string(search_text)}}, limit=50
+        )
 
     async def retrieve(self, id_str: str) -> DocT:
         """Retrieve a specific object by id that also match the query."""

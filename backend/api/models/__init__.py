@@ -4,8 +4,8 @@
 Models define logical structuring of the data in the database.
 """
 
+from .calcul import AuditTrail, CalculationRequest, CalculationResult
 from .user import User
-from .calcul import CalculationRequest, CalculationResult, AuditTrail
 
 __all__ = [
     "User",

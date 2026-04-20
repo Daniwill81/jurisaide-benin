@@ -9,15 +9,9 @@ Utilisation:
 Ou dans le contexte de l'application via manage.py ou FastAPI startup.
 """
 
-from beanie import init_beanie
-
-from api.models import (
-    User,
-    CalculationRequest,
-    CalculationResult,
-    AuditTrail,
-)
+from api.models import AuditTrail, CalculationRequest, CalculationResult, User
 from AppMain.settings import AppSettings
+from beanie import init_beanie
 
 
 async def init_calculation_models():

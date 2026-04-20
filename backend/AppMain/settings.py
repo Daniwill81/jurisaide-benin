@@ -25,7 +25,6 @@ import typing
 
 import aioboto3
 import pydantic_settings
-
 from sap.settings import DatabaseParams
 
 locale.setlocale(locale.LC_ALL, "")
@@ -100,7 +99,9 @@ def logging_setter() -> dict[str, typing.Any]:
             "handlers": ["console", "file"],
         },
         "formatters": {
-            "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+            "verbose": {
+                "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+            },
             "simple": {"format": "%(asctime)s %(levelname)s %(message)s"},
         },
         "handlers": {
@@ -137,7 +138,11 @@ def logging_setter() -> dict[str, typing.Any]:
                 "handlers": ["file_access"],
                 "propagate": False,
             },
-            "sap": {"level": "DEBUG", "handlers": ["console", "file"], "propagate": False},
+            "sap": {
+                "level": "DEBUG",
+                "handlers": ["console", "file"],
+                "propagate": False,
+            },
         },
     }
 

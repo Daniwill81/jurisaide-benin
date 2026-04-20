@@ -4,11 +4,10 @@ CalculationQuery.
 Query to fetch and filter calculation requests.
 """
 
-from beanie import PydanticObjectId
-from beanie.odm.queries.find import FindMany
-
 from api.models.calcul import CalculationRequest
 from api.models.enums import WorkerCategory
+from beanie import PydanticObjectId
+from beanie.odm.queries.find import FindMany
 
 from ._base import Query
 
@@ -58,9 +57,7 @@ class CalculationQuery(Query[CalculationRequest]):
     async def get_search(self, search_text: str) -> FindMany[CalculationRequest]:
         """Apply a search for initial queryset."""
         qs = self.get_qs()
-        return (
-            await qs
-        ).find(
+        return (await qs).find(
             {
                 "$text": {
                     "$search": search_text,

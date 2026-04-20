@@ -14,12 +14,9 @@ Status: ⚠️ PROVISIONAL - REQUIRES VALIDATION WITH OFFICIAL SOURCES
 from datetime import datetime, timedelta
 
 from api.models.enums import WorkerCategory
-from api.xlib.labor_code import (
-    calculate_leave_pay,
-    calculate_notice_period_pay,
-    calculate_seniority,
-    calculate_severance_pay,
-)
+from api.xlib.labor_code import (calculate_leave_pay,
+                                 calculate_notice_period_pay,
+                                 calculate_seniority, calculate_severance_pay)
 
 # ================================================================================
 # TEST CASE 1: Worker with 8 years tenure - Severance Calculation
@@ -150,7 +147,9 @@ def test_case_3_notice_periods():
     avg_salary = 1_000_000
 
     notice_ouvrier = calculate_notice_period_pay(avg_salary, WorkerCategory.OUVRIER)
-    notice_agent = calculate_notice_period_pay(avg_salary, WorkerCategory.AGENT_MAITRISE)
+    notice_agent = calculate_notice_period_pay(
+        avg_salary, WorkerCategory.AGENT_MAITRISE
+    )
     notice_cadre = calculate_notice_period_pay(avg_salary, WorkerCategory.CADRE)
 
     print(
