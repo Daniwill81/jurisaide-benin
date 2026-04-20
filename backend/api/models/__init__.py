@@ -1,3 +1,11 @@
-from .user.user import User
-from .calcul.indemnite import CalculationAudit
-from .enums import WorkerCategory, ContractType, TerminationReason
+"""
+# Models.
+
+Models define logical structuring of the data in the database.
+"""
+
+from .user import User
+
+__all__ = [
+    "User",
+]

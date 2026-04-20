@@ -6,17 +6,11 @@ It exposes the ASGI callable as a module-level variable named ``app``.
 
 """
 
-import asyncio
-import hashlib
-import hmac
 import logging
-import time
 import typing
 from contextlib import asynccontextmanager
 
-import motor.motor_asyncio
-from beanie import init_beanie
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,18 +21,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import HTMLResponse, JSONResponse
 from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
-from starlette.types import Message
 
 from sap.beanie.client import BeanieClient
 from sap.fastapi.middleware import InitBeanieMiddleware  # , LogServerErrorMiddleware
 
-from app import models
-from app.middleware import InitGlobalParamsMiddleware
-from app.webapi import router_api
-
+from api import models
+from api.webapi import router_api
 
 from .settings import AppSettings, logger
-
 
 
 @asynccontextmanager
@@ -52,7 +42,14 @@ async def lifespan(current_app: FastAPI) -> typing.AsyncGenerator[None, None]:
 
 
 # Initialize application
-app = FastAPI(docs_url=None, redoc_url=None, title=AppSettings.PROJ_NAME, description="Engine for Beninese Labor Law", version="0.1.0", lifespan=lifespan)
+app = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+    title=AppSettings.PROJ_NAME,
+    description="Engine for Beninese Labor Law",
+    version="0.1.0",
+    lifespan=lifespan,
+)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -110,7 +107,11 @@ app.routes.append(Mount(path="/static", app=StaticFiles(directory=AppSettings.AP
 
 # Mount RESTFul API
 app_api = FastAPI(
-    docs_url=None, redoc_url=None, openapi_url=None, title=AppSettings.PROJ_NAME, description="JurisAide Benin project API"
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+    title=AppSettings.PROJ_NAME,
+    description="JurisAide Benin project API",
 )
 
 
@@ -120,17 +121,13 @@ async def root() -> dict[str, str]:
 
 
 @app_api.get("/doc", include_in_schema=False)
-async def custom_swagger_ui_html(
-    request: Request
-) -> HTMLResponse:
+async def custom_swagger_ui_html(request: Request) -> HTMLResponse:
     """Protect swagger doc endpoint."""
     return get_swagger_ui_html(openapi_url="/api/v1/openapi.json", title=f"{AppSettings.PROJ_NAME} - Documentation")
 
 
 @app_api.get("/docs", include_in_schema=False)
-async def custom_redoc_html(
-    request: Request
-) -> HTMLResponse:
+async def custom_redoc_html(request: Request) -> HTMLResponse:
     """Protect redoc doc endpoint."""
     return get_redoc_html(openapi_url="/api/v1/openapi.json", title=f"{AppSettings.PROJ_NAME} - Documentation")
 
@@ -174,6 +171,7 @@ async def update_uvicorn_logger() -> None:
     handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger_uvicorn.addHandler(handler)
+
 
 @app.get("/doc")
 async def api_doc_redirect(request: Request) -> Response:

@@ -1,9 +1,12 @@
 from datetime import datetime
 from typing import Optional
+
 from beanie import Document, Link
 from pydantic import Field
-from api.models.user.user import User
+
 from api.models.enums import WorkerCategory
+from api.models.user.user import User
+
 
 class CalculationAudit(Document):
     user: Optional[Link[User]] = None

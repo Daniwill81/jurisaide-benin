@@ -65,14 +65,6 @@ class _Settings(pydantic_settings.BaseSettings):
     CRYPTO_SECRET: str  # a key used for encryption
     TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # Files Storage
-    AWS_ENDPOINT: str
-    AWS_ACCESS_KEY_ID: str
-    AWS_ACCESS_KEY_SECRET: str
-    AWS_REGION: str
-    AWS_S3_BUCKET: str = ""
-    AWS_USE_SSL: bool = True
-
     @property
     def is_prod(self) -> bool:
         """Return True if production environment."""
@@ -87,6 +79,7 @@ class _Settings(pydantic_settings.BaseSettings):
     def is_dev(self) -> bool:
         """Return True if dev environment."""
         return self.APP_ENV == "DEV"
+
 
 AppSettings = _Settings()
 

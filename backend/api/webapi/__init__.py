@@ -10,7 +10,6 @@ from fastapi import APIRouter
 
 from .auth import router as router_auth
 
-
 router_api = APIRouter(redirect_slashes=True)
 
 router_api.include_router(router_auth, prefix="/auth/user_token", tags=["auth"])

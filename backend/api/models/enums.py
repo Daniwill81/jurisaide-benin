@@ -1,16 +1,30 @@
-from enum import Enum
+import enum
 
-class WorkerCategory(str, Enum):
+
+class RoleEnum(str, enum.Enum):
+    """List of roles available for users.
+
+    Each role has different access and set of permissions.
+    """
+
+    ADMIN = "ADMIN"  # Super administrator
+    PUSER = "PUSER"  # Platform user
+    ANONYMOUS = "ANONYMOUS"  # Unidentified user
+
+
+class WorkerCategory(str, enum.Enum):
     OUVRIER = "ouvrier"
     EMPLOYE = "employe"
     AGENT_MAITRISE = "agent_maitrise"
     CADRE = "cadre"
 
-class ContractType(str, Enum):
+
+class ContractType(str, enum.Enum):
     CDI = "cdi"
     CDD = "cdd"
 
-class TerminationReason(str, Enum):
+
+class TerminationReason(str, enum.Enum):
     LICENCIEMENT = "licenciement"
     DEMISSION = "demission"
     RUPTURE_NEGOCIEE = "rupture_negociee"

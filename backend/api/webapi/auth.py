@@ -1,74 +1,65 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from api.models.user.user import User
-from api.serializers.auth import Token, UserLogin, UserCreate, GoogleAuth
-from api.xlib.auth import verify_password, get_password_hash, create_access_token
+"""
+# WebAPI.
+
+The API endpoint  is queried by other applications
+to communicate with this application. This endpoint usually relies
+on a header based authenticated encoded in the request headers.
+Commonly Basic or Bearer Auth.
+
+It should accept and returns data formatted in JSON.
+
+The API is structured with  Representational state transfer architecture:
+https://en.wikipedia.org/wiki/Representational_state_transfer
+"""
+
+from fastapi import APIRouter, Request, status
+
+from api.models import User
+from api.serializers.auth import (
+    AuthTokenSerializer,
+    ForgotPasswordSerializer,
+    LoginAuthSerializer,
+    ResetPasswordSerializer,
+)
+from api.serializers.user import UserSerializer
 
 router = APIRouter()
 
-@router.post("/register", response_model=Token)
-async def register(user_in: UserCreate):
-    user_exists = await User.find_one(User.username == user_in.username)
-    if user_exists:
-        raise HTTPException(status_code=400, detail="Username already exists")
-    
-    user = User(
-        username=user_in.username,
-        email=user_in.email,
-        full_name=user_in.full_name,
-        passport_number=user_in.passport_number,
-        hashed_password=get_password_hash(user_in.password)
-    )
-    await user.insert()
-    
-    access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
 
-@router.post("/login", response_model=Token)
-async def login(login_data: UserLogin):
-    # Search by username OR passport_number
-    user = await User.find_one({
-        "$or": [
-            {"username": login_data.identifier},
-            {"passport_number": login_data.identifier}
-        ]
-    })
-    
-    if not user or not user.hashed_password:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect identifier or password",
-        )
-    
-    if not verify_password(login_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect identifier or password",
-        )
-    
-    access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create(request: Request, serializer_write: LoginAuthSerializer) -> AuthTokenSerializer:
+    """Create an authentication token."""
+    await serializer_write.run_async_validators(request=request)
+    assert (user := serializer_write.instance)
+    await user.generate_auth_key()
+    assert user.auth_key
+    return AuthTokenSerializer(id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user))
 
-@router.post("/google", response_model=Token)
-async def google_login(auth_data: GoogleAuth):
-    # This should verify the Google token with Google's API
-    # For MVP, we'll placeholder this or implement a basic check
-    # In a real app, use google-auth library to verify
-    
-    # Placeholder: assume token is user email for now (DEBUG ONLY)
-    # real implementation: idinfo = id_token.verify_oauth2_token(auth_data.token, requests.Request(), CLIENT_ID)
-    
-    # Dummy logic for demonstration:
-    email = f"{auth_data.token}@gmail.com" # Dummy!
-    user = await User.find_one(User.email == email)
-    
-    if not user:
-        user = User(
-            email=email,
-            full_name="Google User",
-            google_id=auth_data.token, # Dummy!
-            is_active=True
-        )
-        await user.insert()
-    
-    access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/reset_password/", status_code=status.HTTP_202_ACCEPTED)
+async def reset_password(request: Request, serializer_write: ResetPasswordSerializer) -> AuthTokenSerializer:
+    """Let users to set a new password.
+
+    This is also used to confirm registration of new users.
+    Since registration is confirmed by updating the password.
+    """
+    await serializer_write.run_async_validators(request=request)
+    user = await serializer_write.update()
+    await user.generate_auth_key()
+    assert user.auth_key
+    return AuthTokenSerializer(id=user.auth_key, auth_key=user.auth_key, user=UserSerializer.read(user))
+
+
+@router.post("/forgot_password/", status_code=status.HTTP_202_ACCEPTED)
+async def forgot_password(request: Request, serializer_write: ForgotPasswordSerializer) -> dict[str, str]:
+    """Let the user request for a link to reset their password."""
+    await serializer_write.run_async_validators(request=request)
+    user = await serializer_write.update()
+    return {"email": user.email}
+
+
+@router.delete("/{pk}/", status_code=status.HTTP_204_NO_CONTENT)
+async def destroy(request: Request, pk: str) -> None:
+    """Delete the authentication token used by the user."""
+    instance = await User.find_one_or_404(User.auth_key == pk)
+    await instance.set({"auth_key": None})

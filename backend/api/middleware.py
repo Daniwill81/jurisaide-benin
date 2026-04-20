@@ -8,6 +8,7 @@ Learn more: https://fastapi.tiangolo.com/tutorial/middleware/
 
 import typing
 
+from app.models import Campaign, Preference, User
 from fastapi import Request
 from fastapi.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -17,7 +18,6 @@ from starlette.types import Message
 from sap.fastapi import Flash
 from sap.fastapi.auth import JWTAuth
 
-from app.models import Campaign, Preference, User
 from AppMain.settings import AppSettings, logger_access, templates
 
 jwt_auth = JWTAuth(user_model=User)
