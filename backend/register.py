@@ -47,6 +47,7 @@ async def register_superusers(data_list: list[dict[str, typing.Any]]) -> None:
         user = User(
             first_name=data_row["first_name"],
             last_name=data_row["last_name"],
+            sex=data_row["sex"],
             email=email,
             role=RoleEnum.ADMIN,
             is_active=True,

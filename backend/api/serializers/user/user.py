@@ -84,7 +84,7 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
             role=self.role,
             is_active=True,
         )
-        user.set_password(self.password)
+        await user.set_password(self.password)
         await user.insert()
         return user
 
