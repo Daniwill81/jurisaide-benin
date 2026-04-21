@@ -1,8 +1,98 @@
-export default function DossierDetailPage() {
+'use client';
+
+import { use, useState, useEffect } from 'react';
+import Navbar from '@/components/layout/navbar';
+import { apiFetch } from '@/lib/api';
+
+export default function DossierDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [dossier, setDossier] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDossier = async () => {
+      try {
+        const response = await apiFetch<any>(`/dossiers/${id}/`);
+        setDossier(response);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDossier();
+  }, [id]);
+
+  if (loading) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="pt-32 text-center">Chargement...</div></div>;
+  if (!dossier) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="pt-32 text-center text-red-500 font-bold">Dossier introuvable</div></div>;
+
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-semibold text-slate-900">Dossier Detail</h1>
-      <p className="mt-2 text-sm text-slate-600">This dossier view is coming soon.</p>
-    </main>
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
+      <main className="max-w-7xl mx-auto pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-4 mb-8">
+          <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+            {dossier.status}
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{dossier.title}</h1>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Description</h2>
+              <p className="text-slate-600 leading-relaxed">{dossier.description || 'Aucune description fournie.'}</p>
+            </section>
+
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Historique des calculs</h2>
+                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">+ Ajouter</button>
+              </div>
+              <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                <p className="text-slate-400 font-medium italic">Aucun calcul lié à ce dossier pour le moment.</p>
+              </div>
+            </section>
+          </div>
+
+          <div className="space-y-6">
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <h2 className="font-bold text-slate-900 mb-6">Informations Client</h2>
+              <div className="space-y-4">
+                <InfoRow label="Nom complet" value="En attente" />
+                <InfoRow label="Email" value="En attente" />
+                <InfoRow label="Téléphone" value="En attente" />
+              </div>
+            </section>
+
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <h2 className="font-bold text-slate-900 mb-4">Timeline de l'affaire</h2>
+              <div className="space-y-6 relative border-l-2 border-slate-100 ml-2 pl-6 py-2">
+                <TimelineItem date={new Date(dossier.created_at).toLocaleDateString()} text="Ouverture du dossier" active />
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string, value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function TimelineItem({ date, text, active }: { date: string, text: string, active?: boolean }) {
+  return (
+    <div className="relative">
+      <div className={`absolute -left-[30px] top-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${active ? 'bg-indigo-600' : 'bg-slate-300'}`} />
+      <p className="text-[10px] font-bold text-slate-400 mb-1">{date}</p>
+      <p className="font-bold text-slate-700 text-sm">{text}</p>
+    </div>
   );
 }

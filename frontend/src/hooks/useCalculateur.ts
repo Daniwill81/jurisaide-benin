@@ -1,33 +1,45 @@
 'use client';
 
 import { useState } from 'react';
+import { apiFetch } from '@/lib/api';
+
+export interface CalculationResult {
+  seniority_years: number;
+  severance_pay: number;
+  notice_period_pay: number;
+  leave_pay: number;
+  total: number;
+  breakdown: any;
+  articles: Record<string, string>;
+}
 
 export function useCalculateur() {
-  const [calculations, setCalculations] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<CalculationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCalculations = async (authKey: string) => {
+  const calculate = async (data: any) => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch('/api/v1/calculations/', {
-        headers: {
-          'Authorization': `Basic ${btoa(`${authKey}:${authKey}`)}`,
-        },
+      const response = await apiFetch<CalculationResult>('/calculations/', {
+        method: 'POST',
+        body: JSON.stringify(data),
       });
-
-      if (!response.ok) throw new Error('Failed to fetch calculations');
-
-      const data = await response.json();
-      setCalculations(data.items || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setResult(response);
+      return response;
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors du calcul');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  return { calculations, loading, error, fetchCalculations };
+  const reset = () => {
+    setResult(null);
+    setError(null);
+  };
+
+  return { calculate, result, loading, error, reset };
 }
