@@ -59,7 +59,7 @@ source .venv/bin/activate
 pip install -r requirements-dev.txt
 ```
 
-4. Init environment variables. Duplicate the env template file:
+5. Init environment variables. Duplicate the env template file:
 
 ```shell
 cp ./.env.tpl ./.env
@@ -67,21 +67,17 @@ cp ./.env.tpl ./.env
 
 Open `.env` file with a text editor and update the env vars as needed
 
-5. Run migrations:
+6. Load metadata, from metadata.yml:
+
+```shell
+python register.py
+```
+
+7. Run migrations:
 
 ```shell
 python migrate.py
 ```
-
-## ⏯ Running
-
-To run the app on your machine, make sure to have activated your virtualenv and run:
-
-```shell
-python main.py
-```
-
-- Visit: http://127.0.0.1:8000/ to view the application running in your browser
 
 ## 🖌 Formatting
 
