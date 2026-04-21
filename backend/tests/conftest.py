@@ -231,6 +231,35 @@ class FakeApiClient:
     def post(
         self, path: str, json: dict[str, Any] | None = None, headers: dict[str, str] | None = None
     ) -> FakeResponse:
+        if path == "/api/v1/users/":
+            # Mock register behavior
+            payload = json or {}
+            email = payload.get("email")
+            if any(u.email == email for u in self.users.values()):
+                return FakeResponse(422, {"detail": "Email already exists"})
+
+            user = _build_user(
+                user_id=str(ObjectId()),
+                email=email,
+                auth_key="new_key",
+                role=RoleEnum(payload.get("role", "PUSER")),
+                first_name=payload.get("first_name", ""),
+                last_name=payload.get("last_name", ""),
+            )
+            self.users[user.auth_key] = user
+            return FakeResponse(
+                201,
+                {
+                    "id": str(user.id),
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "role": user.role.value,
+                    "is_active": True,
+                    "created_at": datetime.utcnow().isoformat(),
+                },
+            )
+
         if path != "/api/v1/calculations/":
             return FakeResponse(404, {"detail": "Not found"})
 
@@ -354,7 +383,7 @@ def client() -> FakeApiClient:
         ),
         "user123": _build_user(
             user_id="507f1f77bcf86cd799439012",
-            email="user@test.com",
+            email="regular@test.com",
             auth_key="user123",
             role=RoleEnum.PUSER,
             first_name="Regular",
@@ -362,3 +391,14 @@ def client() -> FakeApiClient:
         ),
     }
     return FakeApiClient(auth_users)
+
+
+@pytest.fixture
+async def real_client():
+    """Create a real AsyncClient for the app."""
+    from httpx import AsyncClient
+
+    from AppMain.asgi import app
+
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac

@@ -10,7 +10,7 @@ import logging
 import typing
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -180,6 +180,15 @@ app_pages.add_middleware(SessionMiddleware, session_cookie="starlette", secret_k
 async def initialize_beanie() -> None:
     """Initialize beanie on startup."""
     await BeanieClient.init(mongo_params=AppSettings.MONGO, document_models=document_models)
+
+
+@app.exception_handler(AssertionError)
+async def assertion_exception_handler(request: Request, exc: AssertionError) -> JSONResponse:
+    """Convert assertion errors (validation) to 422 responses."""
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": [{"msg": str(exc), "type": "assertion_error"}]},
+    )
 
 
 # Always log exception

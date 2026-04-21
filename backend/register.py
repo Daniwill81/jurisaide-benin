@@ -5,8 +5,9 @@ Data is loading from metadata.yaml
 """
 
 import asyncio
-import typing
 import os
+import typing
+
 import yaml
 
 from api.models import User
@@ -22,7 +23,7 @@ async def register() -> None:
     filename = "metadata.yaml"
     if not os.path.exists(filename):
         filename = "metadata.yml"
-        
+
     if not os.path.exists(filename):
         print(f"Error: Neither metadata.yaml nor metadata.yml found.")
         return
@@ -37,7 +38,7 @@ async def register() -> None:
 async def register_superusers(data_list: list[dict[str, typing.Any]]) -> None:
     """Create the super admin account."""
     for data_row in data_list:
-        email = data_row["email"].replace(",", ".") # Fix common typo
+        email = data_row["email"].replace(",", ".")  # Fix common typo
         user = await User.find_one(User.email == email)
         if user:
             print(f"Super admin {email} already exists.")
@@ -53,12 +54,13 @@ async def register_superusers(data_list: list[dict[str, typing.Any]]) -> None:
 
         # Set default password
         user.set_password("admin123")
-        
+
         await user.insert()
         await user.generate_auth_key()
 
         assert user.id
         print(f"Super admin {user.email} was successfully created with password 'admin123'.")
+
 
 if __name__ == "__main__":
     asyncio.run(register())

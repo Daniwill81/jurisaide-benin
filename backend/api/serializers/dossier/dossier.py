@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Any, List, Optional
+
 from pydantic import Field
+
 from sap.fastapi import ObjectSerializer, WriteObjectSerializer
+
+from api.models.dossier._embedded import DisputeDetails, WorkHistory
 from api.models.dossier.dossier import Dossier
-from api.models.dossier._embedded import WorkHistory, DisputeDetails
+
 
 class WorkHistorySerializer(ObjectSerializer[WorkHistory]):
     employer: str
@@ -12,10 +16,12 @@ class WorkHistorySerializer(ObjectSerializer[WorkHistory]):
     end_date: Optional[datetime] = None
     salary: float
 
+
 class DisputeDetailsSerializer(ObjectSerializer[DisputeDetails]):
     nature: str
     description: str
     demands: List[str]
+
 
 class DossierSerializer(ObjectSerializer[Dossier]):
     id: str
@@ -27,6 +33,7 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     dispute_details: Optional[DisputeDetailsSerializer] = None
     created_at: datetime
     updated_at: datetime
+
 
 class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
     title: str
@@ -43,7 +50,7 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
             status=self.status,
             user_id=request_user.id if request_user else None,
             work_history=[WorkHistory(**wh) for wh in self.work_history],
-            dispute_details=DisputeDetails(**self.dispute_details) if self.dispute_details else None
+            dispute_details=DisputeDetails(**self.dispute_details) if self.dispute_details else None,
         )
         await instance.insert()
         return instance

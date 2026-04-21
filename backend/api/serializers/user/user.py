@@ -25,8 +25,8 @@ class UserSerializer(ObjectSerializer[User]):
     sex: SexEnum | None = None
     email: pydantic.EmailStr
     is_active: bool
-    roles: RoleEnum
-    created: datetime.datetime
+    role: RoleEnum
+    created_at: datetime.datetime
 
 
 class WriteUserSerializer(WriteObjectSerializer[User]):
@@ -91,14 +91,11 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
     async def update(self, **kwargs: typing.Any) -> User:
         """Update the object in the database using the data extracted by the serializer."""
         assert self.instance
-        data_to_update = {
-            "first_name": self.first_name,
-            "last_name": self.last_name,
-            "birthdate": self.birthdate,
-            "sex": self.sex,
-            "email": self.email,
-        }
-        instance: User = self.instance.model_copy(update=data_to_update)
-        await instance.save()
-        self.instance = instance
-        return instance
+        self.instance.first_name = self.first_name
+        self.instance.last_name = self.last_name
+        self.instance.sex = self.sex
+        self.instance.email = self.email
+        self.instance.role = self.role
+        self.instance.updated_at = datetime.datetime.utcnow()
+        await self.instance.save()
+        return self.instance
