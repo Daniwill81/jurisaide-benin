@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+    date: false,
+    email: false,
+    address: false,
   },
   icons: {
     icon: '/favicon.ico',
@@ -32,7 +35,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-gray-50">
+      <body className="bg-gray-50" suppressHydrationWarning>
         {children}
       </body>
     </html>
