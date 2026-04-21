@@ -67,6 +67,12 @@ cp ./.env.tpl ./.env
 
 Open `.env` file with a text editor and update the env vars as needed
 
+5. Run migrations:
+
+```shell
+python migrate.py
+```
+
 ## ⏯ Running
 
 To run the app on your machine, make sure to have activated your virtualenv and run:
