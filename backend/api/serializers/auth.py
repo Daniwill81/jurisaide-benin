@@ -4,6 +4,7 @@
 Handle data validation.
 """
 
+import logging
 import re
 import typing
 
@@ -18,6 +19,7 @@ from sap.fastapi.auth import JWTAuth
 from api.models import User
 from api.serializers.user import UserSerializer
 
+logger = logging.getLogger("app")
 jwt_auth = JWTAuth(user_model=User)
 
 
@@ -52,11 +54,30 @@ class LoginAuthSerializer(WriteObjectSerializer[User]):
 
     async def verify_email_password(self) -> bool:
         """Check that the email exists in the DB."""
+        logger.info(f"Attempting to authenticate user: {self.email}")
         self.instance = await User.find_current(email=self.email)
 
-        if self.instance is not None and self.instance.verify_password(self.password):
-            return True
+        if self.instance is None:
+            logger.warning(f"User not found: {self.email}")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Les identifiants que vous avez saisi ne sont pas valides. "
+                    "Si vous avez oublié votre mot de passe, veuillez procéder à sa réinitialisation."
+                ),
+            )
 
+        logger.info(f"User found: {self.instance.email}, verifying password")
+        try:
+            is_valid = self.instance.verify_password(self.password)
+            logger.info(f"Password verification result: {is_valid}")
+            if is_valid:
+                return True
+        except Exception as e:
+            logger.error(f"Error verifying password: {e}", exc_info=True)
+            raise
+
+        logger.warning(f"Invalid password for user: {self.email}")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(

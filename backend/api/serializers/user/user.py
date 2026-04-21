@@ -26,7 +26,12 @@ class UserSerializer(ObjectSerializer[User]):
     email: pydantic.EmailStr
     is_active: bool
     role: RoleEnum
-    created_at: datetime.datetime
+    # created_at: datetime.datetime | None = None
+
+    @classmethod
+    def get_id(cls, instance: User) -> str:
+        """Extract the ID from the User instance."""
+        return str(instance.id)
 
 
 class WriteUserSerializer(WriteObjectSerializer[User]):
@@ -84,7 +89,7 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
             role=self.role,
             is_active=True,
         )
-        await user.set_password(self.password)
+        user.set_password(self.password)
         await user.insert()
         return user
 
