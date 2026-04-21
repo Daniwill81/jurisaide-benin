@@ -8,17 +8,12 @@ Learn more: https://fastapi.tiangolo.com/tutorial/middleware/
 
 import typing
 
-from app.models import Campaign, Preference, User
-from AppMain.settings import AppSettings, logger_access, templates
 from fastapi import Request
-from fastapi.exceptions import HTTPException
-from sap.fastapi import Flash
-from sap.fastapi.auth import JWTAuth
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from starlette.types import Message
 
-jwt_auth = JWTAuth(user_model=User)
+from AppMain.settings import logger_access
 
 
 class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
@@ -43,8 +38,7 @@ class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
         if (
             "/pages/auth/login" not in str(request.url)
             and request.method not in ["GET", "HEAD", "OPTIONS"]
-            and request.headers.get("Content-Type")
-            in ["application/x-www-form-urlencoded", "application/json"]
+            and request.headers.get("Content-Type") in ["application/x-www-form-urlencoded", "application/json"]
         ):
             await self.set_body(request)
             user_email = request.cookies.get("user_email")

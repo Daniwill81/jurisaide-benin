@@ -8,12 +8,19 @@ import datetime
 from typing import Any, Optional
 
 import pydantic
+from fastapi import Request
+
+from sap.fastapi import ObjectSerializer, WriteObjectSerializer
+from sap.fastapi.pagination import CursorInfo, PaginatedData
+
 from api.models.calcul import CalculationRequest, CalculationResult
 from api.models.enums import ContractType, TerminationReason, WorkerCategory
-from api.xlib.labor_code import (calculate_leave_pay,
-                                 calculate_notice_period_pay,
-                                 calculate_seniority, calculate_severance_pay)
-from sap.fastapi import ObjectSerializer, WriteObjectSerializer
+from api.xlib.labor_code import (
+    calculate_leave_pay,
+    calculate_notice_period_pay,
+    calculate_seniority,
+    calculate_severance_pay,
+)
 
 
 class CalculationSerializer(ObjectSerializer[CalculationRequest]):
@@ -46,13 +53,11 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     notice_period_pay: Optional[float] = None
     leave_pay: Optional[float] = None
     total: Optional[float] = None
-    breakdown: Optional[dict] = None
-    articles: Optional[dict] = None
+    breakdown: Optional[dict[str, Any]] = None
+    articles: Optional[dict[str, str]] = None
 
     @classmethod
-    def read_with_result(
-        cls, instance: CalculationRequest, result: "CalculationResult"
-    ) -> "CalculationSerializer":
+    def read_with_result(cls, instance: CalculationRequest, result: "CalculationResult") -> "CalculationSerializer":
         """
         Read serializer with enriched calculation results.
 
@@ -73,6 +78,34 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
         serializer.articles = result.articles
         return serializer
 
+    @classmethod
+    async def read_page_with_results(
+        cls,
+        instance_list: list[CalculationRequest],
+        request: Request,
+        cursor_info: CursorInfo,
+    ) -> PaginatedData["CalculationSerializer"]:
+        """
+        Read paginated results with enriched calculation data.
+
+        For each calculation in the page, fetch its result and populate fields.
+        """
+        from api.controllers.calcul import CalculationController
+
+        enriched_list: list[CalculationSerializer] = []
+        for instance in instance_list:
+            result = await CalculationController.get_calculation_result(instance)
+            enriched_list.append(cls.read_with_result(instance, result))
+
+        page_next = cursor_info.get_next()
+        page_previous = cursor_info.get_previous()
+        return PaginatedData(
+            count=cursor_info.get_count(),
+            next=str(request.url.include_query_params(cursor=page_next)) if page_next else None,
+            previous=str(request.url.include_query_params(cursor=page_previous)) if page_previous else None,
+            data=enriched_list,
+        )
+
 
 class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     """Serialize the `CalculationRequest` object for create and update."""
@@ -82,9 +115,7 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     employee_id: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
-    avg_salary: float = pydantic.Field(
-        gt=0, description="Salaire moyen mensuel en FCFA"
-    )
+    avg_salary: float = pydantic.Field(gt=0, description="Salaire moyen mensuel en FCFA")
     daily_salary: Optional[float] = None
     category: WorkerCategory
     contract_type: ContractType = ContractType.CDI
@@ -98,9 +129,7 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     @pydantic.field_validator("end_date")
     @classmethod
-    def validate_end_date(
-        cls, value: datetime.date, info: pydantic.ValidationInfo
-    ) -> datetime.date:
+    def validate_end_date(cls, value: datetime.date, info: pydantic.ValidationInfo) -> datetime.date:
         """Verify that end_date is after start_date."""
         if "start_date" in info.data and value <= info.data["start_date"]:
             raise ValueError("La date de fin doit être après la date de début.")
@@ -108,18 +137,11 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     @pydantic.field_validator("daily_salary", mode="before")
     @classmethod
-    def calculate_daily_salary(
-        cls, value: Optional[float], info: pydantic.ValidationInfo
-    ) -> Optional[float]:
+    def calculate_daily_salary(cls, value: Optional[float], info: pydantic.ValidationInfo) -> Optional[float]:
         """Calculate daily salary if not provided (monthly salary / 26)."""
         if value is None and "avg_salary" in info.data:
-            return info.data["avg_salary"] / 26.0
+            return float(info.data["avg_salary"]) / 26.0
         return value
-
-    async def run_async_validators(self, **kwargs: Any) -> None:
-        """Check that data passes validation."""
-        # Add any async validation logic here if needed
-        pass
 
     def calculate_result(self) -> CalculationResult:
         """Calculate the result based on the serializer data."""
@@ -141,9 +163,7 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
         # Calculate components
         severance = calculate_severance_pay(self.avg_salary, seniority_years)
         notice_period = calculate_notice_period_pay(self.avg_salary, self.category)
-        leave = calculate_leave_pay(
-            self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days
-        )
+        leave = calculate_leave_pay(self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days)
 
         total = severance + notice_period + leave
 
@@ -179,9 +199,9 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
         )
 
     @staticmethod
-    def _get_severance_details(seniority_years: float) -> dict:
+    def _get_severance_details(seniority_years: float) -> dict[str, dict[str, float | str]]:
         """Get details of severance calculation by brackets."""
-        details = {}
+        details: dict[str, dict[str, float | str]] = {}
 
         if seniority_years >= 1:
             bracket_1 = min(seniority_years, 5)

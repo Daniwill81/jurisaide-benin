@@ -25,8 +25,9 @@ IMPORTANT:
 
 from datetime import datetime
 
+from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]
+
 from api.models.enums import WorkerCategory
-from dateutil.relativedelta import relativedelta
 
 
 def calculate_seniority(start_date: datetime, end_date: datetime) -> float:
@@ -51,7 +52,7 @@ def calculate_seniority(start_date: datetime, end_date: datetime) -> float:
         - Must include weekends and holidays in date calculation
     """
     diff = relativedelta(end_date, start_date)
-    years = diff.years + (diff.months / 12.0) + (diff.days / 365.25)
+    years = float(diff.years) + (float(diff.months) / 12.0) + (float(diff.days) / 365.25)
     return years
 
 

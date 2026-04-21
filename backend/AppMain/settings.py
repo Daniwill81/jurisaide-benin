@@ -25,6 +25,7 @@ import typing
 
 import aioboto3
 import pydantic_settings
+
 from sap.settings import DatabaseParams
 
 locale.setlocale(locale.LC_ALL, "")
@@ -64,6 +65,11 @@ class _Settings(pydantic_settings.BaseSettings):
     CRYPTO_SECRET: str  # a key used for encryption
     TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
+    # AWS / object storage
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_ACCESS_KEY_SECRET: str = ""
+    AWS_REGION: str = "us-east-1"
+
     @property
     def is_prod(self) -> bool:
         """Return True if production environment."""
@@ -99,9 +105,7 @@ def logging_setter() -> dict[str, typing.Any]:
             "handlers": ["console", "file"],
         },
         "formatters": {
-            "verbose": {
-                "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
-            },
+            "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
             "simple": {"format": "%(asctime)s %(levelname)s %(message)s"},
         },
         "handlers": {

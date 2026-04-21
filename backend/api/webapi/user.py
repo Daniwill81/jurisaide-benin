@@ -12,21 +12,21 @@ The API is structured with  Representational state transfer architecture:
 https://en.wikipedia.org/wiki/Representational_state_transfer
 """
 
+from fastapi import APIRouter, Depends, Request, status
+
+from sap.fastapi.pagination import CursorInfo, PaginatedData
+
 from api.models import User
 from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
+from api.query.user import UserQuery
 from api.serializers.user import UserSerializer, WriteUserSerializer
-from app.query.user import UserQuery
-from fastapi import APIRouter, Depends, Request, status
-from sap.fastapi.pagination import CursorInfo, PaginatedData
 
 router = APIRouter()
 
 
 @router.get("/current/", status_code=status.HTTP_200_OK)
-async def current(
-    request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER]))
-) -> UserSerializer:
+async def current(request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER]))) -> UserSerializer:
     """Retrieve the currently authenticated user."""
     return UserSerializer.read(request_user)
 
@@ -41,9 +41,9 @@ async def listing(
     query = UserQuery(user=request_user, filters=request.query_params)
 
     if search_text := request.query_params.get("q"):
-        qs = await query.get_search(search_text)
+        qs = query.get_search(search_text)
     else:
-        qs = await query.get_qs()
+        qs = query.get_qs()
         cursor_params = cursor.get_beanie_query_params()
 
         qs = qs.find(**cursor_params)

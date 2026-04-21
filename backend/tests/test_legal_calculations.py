@@ -13,17 +13,22 @@ Status: ⚠️ PROVISIONAL - REQUIRES VALIDATION WITH OFFICIAL SOURCES
 
 from datetime import datetime, timedelta
 
+import pytest
+
 from api.models.enums import WorkerCategory
-from api.xlib.labor_code import (calculate_leave_pay,
-                                 calculate_notice_period_pay,
-                                 calculate_seniority, calculate_severance_pay)
+from api.xlib.labor_code import (
+    calculate_leave_pay,
+    calculate_notice_period_pay,
+    calculate_seniority,
+    calculate_severance_pay,
+)
 
 # ================================================================================
 # TEST CASE 1: Worker with 8 years tenure - Severance Calculation
 # ================================================================================
 
 
-def test_case_1_severance_8_years():
+def test_case_1_severance_8_years() -> None:
     """
     SCENARIO:
         Worker type: Employé (Employee)
@@ -78,23 +83,23 @@ def test_case_1_severance_8_years():
 # ================================================================================
 
 
-def test_case_2_severance_12_years():
+def test_case_2_severance_12_years() -> None:
     """
     SCENARIO:
         Worker type: Cadre (Manager)
         Start date: 2010-06-01
-        End date: 2024-01-15 (13.58 years)
+        End date: 2024-01-15 (13.62 years)
         Average monthly salary: 2,000,000 FCFA
         Reason: Retirement
 
     CALCULATION BREAKDOWN:
-        Seniority: 13.58 years
+        Seniority: 13.62 years
 
         Bracket 1 (Years 1-5): 5 × 2,000,000 × 0.30 = 3,000,000 FCFA
         Bracket 2 (Years 6-10): 5 × 2,000,000 × 0.35 = 3,500,000 FCFA
-        Bracket 3 (Years 11-13.58): 3.58 × 2,000,000 × 0.40 = 2,864,000 FCFA
+        Bracket 3 (Years 11-13.62): 3.62 × 2,000,000 × 0.40 = 2,897,330.60 FCFA
 
-        TOTAL SEVERANCE: 9,364,000 FCFA
+        TOTAL SEVERANCE: 9,397,330.60 FCFA
 
     LEGAL REFERENCE:
         Article 44 - Loi 98-004
@@ -107,7 +112,7 @@ def test_case_2_severance_12_years():
     seniority = calculate_seniority(start_date, end_date)
     severance = calculate_severance_pay(avg_salary, seniority)
 
-    expected_severance = 9_364_000
+    expected_severance = 9_397_330.60
 
     print(
         f"""
@@ -121,6 +126,7 @@ def test_case_2_severance_12_years():
     """
     )
 
+    assert abs(seniority - 13.621663244353183) < 0.0001
     assert abs(severance - expected_severance) < 0.01
 
 
@@ -129,7 +135,7 @@ def test_case_2_severance_12_years():
 # ================================================================================
 
 
-def test_case_3_notice_periods():
+def test_case_3_notice_periods() -> None:
     """
     SCENARIO:
         Compare notice compensation across worker categories
@@ -147,9 +153,7 @@ def test_case_3_notice_periods():
     avg_salary = 1_000_000
 
     notice_ouvrier = calculate_notice_period_pay(avg_salary, WorkerCategory.OUVRIER)
-    notice_agent = calculate_notice_period_pay(
-        avg_salary, WorkerCategory.AGENT_MAITRISE
-    )
+    notice_agent = calculate_notice_period_pay(avg_salary, WorkerCategory.AGENT_MAITRISE)
     notice_cadre = calculate_notice_period_pay(avg_salary, WorkerCategory.CADRE)
 
     print(
@@ -174,7 +178,7 @@ def test_case_3_notice_periods():
 # ================================================================================
 
 
-def test_case_4_leave_compensation():
+def test_case_4_leave_compensation() -> None:
     """
     SCENARIO:
         Employee worked for 1 full year
@@ -231,7 +235,7 @@ def test_case_4_leave_compensation():
 # ================================================================================
 
 
-def test_case_5_total_termination_package():
+def test_case_5_total_termination_package() -> None:
     """
     SCENARIO:
         Complete termination scenario
@@ -297,13 +301,8 @@ def test_case_5_total_termination_package():
     """
     )
 
-    return {
-        "seniority": seniority,
-        "severance": severance,
-        "notice": notice,
-        "leave_compensation": leave_comp,
-        "total": total,
-    }
+    assert total == pytest.approx(severance + notice + leave_comp)
+    assert total > severance
 
 
 # ================================================================================

@@ -5,10 +5,11 @@ Handles business logic for calculation requests and results.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from api.models import User
-from api.models.calcul import CalculationRequest, CalculationResult
+from api.models.calcul import AuditTrail, CalculationRequest, CalculationResult
+from api.models.enums import WorkerCategory
 from api.serializers.calcul import WriteCalculationSerializer
 
 
@@ -22,20 +23,12 @@ class CalculationController:
     ) -> CalculationRequest:
         """Create a new calculation request."""
         # Create instance from serializer data
-        calculation_data = {
+        calculation_data: dict[str, Any] = {
             "employee_name": serializer.employee_name,
             "employee_email": serializer.employee_email,
             "employee_id": serializer.employee_id,
-            "start_date": (
-                datetime.combine(serializer.start_date, datetime.min.time())
-                if hasattr(serializer.start_date, "day")
-                else serializer.start_date
-            ),
-            "end_date": (
-                datetime.combine(serializer.end_date, datetime.min.time())
-                if hasattr(serializer.end_date, "day")
-                else serializer.end_date
-            ),
+            "start_date": datetime.combine(serializer.start_date, datetime.min.time()),
+            "end_date": datetime.combine(serializer.end_date, datetime.min.time()),
             "avg_salary": serializer.avg_salary,
             "daily_salary": serializer.daily_salary or (serializer.avg_salary / 26.0),
             "category": serializer.category,
@@ -46,6 +39,13 @@ class CalculationController:
             "notes": serializer.notes,
             "status": "completed",
             "user_id": user.id if user else None,
+            "audit_trail": [
+                AuditTrail(
+                    action="created",
+                    user_id=user.id if user else None,
+                    changes={},
+                )
+            ],
         }
 
         calculation = CalculationRequest(**calculation_data)
@@ -55,12 +55,25 @@ class CalculationController:
 
     @staticmethod
     async def update_calculation(
-        calculation: CalculationRequest,
+        # calculation: CalculationRequest,
         serializer: WriteCalculationSerializer,
         user: Optional[User] = None,
     ) -> CalculationRequest:
         """Update an existing calculation request."""
-        return await serializer.update()
+        updated = await serializer.update()
+
+        # Update audit trail
+        updated.audit_trail.append(
+            AuditTrail(
+                action="updated",
+                user_id=user.id if user else None,
+                changes={},
+            )
+        )
+        updated.updated_at = datetime.utcnow()
+
+        await updated.save()
+        return updated
 
     @staticmethod
     async def get_calculation_result(
@@ -72,19 +85,19 @@ class CalculationController:
         end_dt = calculation.end_date
 
         # Import here to avoid circular imports
-        from api.xlib.labor_code import (calculate_leave_pay,
-                                         calculate_notice_period_pay,
-                                         calculate_seniority,
-                                         calculate_severance_pay)
+        from api.xlib.labor_code import (
+            calculate_leave_pay,
+            calculate_notice_period_pay,
+            calculate_seniority,
+            calculate_severance_pay,
+        )
 
         # Calculate seniority
         seniority_years = calculate_seniority(start_dt, end_dt)
 
         # Calculate components
         severance = calculate_severance_pay(calculation.avg_salary, seniority_years)
-        notice_period = calculate_notice_period_pay(
-            calculation.avg_salary, calculation.category
-        )
+        notice_period = calculate_notice_period_pay(calculation.avg_salary, calculation.category)
         leave = calculate_leave_pay(
             calculation.daily_salary or (calculation.avg_salary / 26.0),
             calculation.remaining_leave_days,
@@ -93,30 +106,24 @@ class CalculationController:
         total = severance + notice_period + leave
 
         # Build breakdown details
-        breakdown = {
+        breakdown: dict[str, Any] = {
             "seniority_years": round(seniority_years, 2),
             "severance_pay": {
                 "amount": round(severance, 2),
                 "formula": "Selon Article 44 - Loi 98-004",
-                "details": CalculationController._get_severance_details(
-                    seniority_years
-                ),
+                "details": CalculationController._get_severance_details(seniority_years),
             },
             "notice_period_pay": {
                 "amount": round(notice_period, 2),
                 "formula": "Selon Article 53 - Loi 98-004",
                 "category": calculation.category.value,
-                "months": CalculationController._get_notice_months(
-                    calculation.category
-                ),
+                "months": CalculationController._get_notice_months(calculation.category),
             },
             "leave_pay": {
                 "amount": round(leave, 2),
                 "formula": "Selon Article 113 - Loi 98-004",
                 "remaining_days": calculation.remaining_leave_days,
-                "daily_rate": round(
-                    calculation.daily_salary or (calculation.avg_salary / 26.0), 2
-                ),
+                "daily_rate": round(calculation.daily_salary or (calculation.avg_salary / 26.0), 2),
             },
         }
 
@@ -132,9 +139,9 @@ class CalculationController:
         )
 
     @staticmethod
-    def _get_severance_details(seniority_years: float) -> dict:
+    def _get_severance_details(seniority_years: float) -> dict[str, dict[str, float | str]]:
         """Get details of severance calculation by brackets."""
-        details = {}
+        details: dict[str, dict[str, float | str]] = {}
 
         if seniority_years >= 1:
             bracket_1 = min(seniority_years, 5)
@@ -160,10 +167,8 @@ class CalculationController:
         return details
 
     @staticmethod
-    def _get_notice_months(category) -> int:
+    def _get_notice_months(category: WorkerCategory) -> int:
         """Get notice period in months by category."""
-        from api.models.enums import WorkerCategory
-
         notice_months = {
             WorkerCategory.OUVRIER: 1,
             WorkerCategory.EMPLOYE: 1,

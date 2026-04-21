@@ -1,8 +1,8 @@
 import os
 from datetime import datetime, timedelta
-from typing import Any, Union
+from typing import cast
 
-from jose import jwt
+from jose import jwt  # type: ignore[import-untyped]
 from passlib.context import CryptContext
 
 # Secret keys and constants - should be in .env in production
@@ -21,14 +21,12 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(
-    subject: Union[str, Any], expires_delta: timedelta = None
-) -> str:
+def create_access_token(subject: object, expires_delta: timedelta | None = None) -> str:
     if expires_delta:
         expire = datetime.now() + expires_delta
     else:
         expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {"exp": expire, "sub": str(subject)}
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = cast(str, jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM))
     return encoded_jwt

@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Optional
 
-from api.models.enums import WorkerCategory
-from api.models.user.user import User
 from beanie import Document, Link
 from pydantic import Field
+
+from api.models.enums import WorkerCategory
+from api.models.user.user import User
 
 
 class CalculationAudit(Document):

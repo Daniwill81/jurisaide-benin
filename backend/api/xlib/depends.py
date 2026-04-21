@@ -1,10 +1,9 @@
-from typing import Any, Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt  # type: ignore[import-untyped]
 
 from api.models.user.user import User
 from api.xlib.auth import ALGORITHM, SECRET_KEY
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login", auto_error=False)
 
@@ -20,8 +19,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id = payload.get("sub") if isinstance(payload, dict) else None
+        if not isinstance(user_id, str):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
@@ -32,7 +31,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     return user
 
 
-async def get_optional_user(token: str = Depends(oauth2_scheme)) -> Optional[User]:
+async def get_optional_user(token: str = Depends(oauth2_scheme)) -> User | None:
     if not token:
         return None
     try:

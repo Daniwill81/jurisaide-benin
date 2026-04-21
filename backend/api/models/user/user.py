@@ -4,9 +4,11 @@ import passlib.pwd
 import pydantic
 import pymongo
 import pymongo.collation
-from api.models.enums import RoleEnum, SexEnum
 from beanie import Document, operators
+
 from sap.beanie.mixins import PasswordMixin
+
+from api.models.enums import RoleEnum, SexEnum
 
 
 class User(PasswordMixin, Document):
@@ -51,9 +53,11 @@ class User(PasswordMixin, Document):
         name = "user"
         email_collation = pymongo.collation.Collation("en", strength=2)
         indexes = [
-            pymongo.IndexModel(("email", pymongo.ASCENDING), unique=True),
+            pymongo.IndexModel([("email", pymongo.ASCENDING)], unique=True),
             pymongo.IndexModel(
-                "email", name="case_insensitive_email_index", collation=email_collation
+                [("email", pymongo.ASCENDING)],
+                name="case_insensitive_email_index",
+                collation=email_collation,
             ),
             pymongo.IndexModel(
                 [

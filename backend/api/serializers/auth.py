@@ -8,13 +8,15 @@ import re
 import typing
 
 import pydantic
-from api.models import User
-from api.serializers.user import UserSerializer
 from fastapi import status
 from fastapi.exceptions import HTTPException
 from pydantic import Field
+
 from sap.fastapi import WriteObjectSerializer
 from sap.fastapi.auth import JWTAuth
+
+from api.models import User
+from api.serializers.user import UserSerializer
 
 jwt_auth = JWTAuth(user_model=User)
 
@@ -102,23 +104,17 @@ class ResetPasswordSerializer(WriteObjectSerializer[User]):
     def validate_password(cls, value: str) -> str:
         """Verify that the password fit security criteria"""
         if not re.findall(r"[a-zA-Z]+", value):
-            raise AssertionError(
-                "Votre mot de passe doit contenir au moins une lettre."
-            )
+            raise AssertionError("Votre mot de passe doit contenir au moins une lettre.")
         if not re.findall(r"[0-9]+", value):
             raise AssertionError("Votre mot de passe doit contenir au moins 1 chiffre.")
         if re.match(r"^\w+$", value):
-            raise AssertionError(
-                "Votre mot de passe doit contenir au moins 1 caractère spécial."
-            )
+            raise AssertionError("Votre mot de passe doit contenir au moins 1 caractère spécial.")
         return value
 
     @pydantic.model_validator(mode="after")
     def validate_passwords_equals(self) -> typing.Self:
         """Verify that both password are equals."""
-        assert (
-            self.password == self.password2
-        ), "Le mot de passe de confirmation ne corresponds pas."
+        assert self.password == self.password2, "Le mot de passe de confirmation ne corresponds pas."
         return self
 
     async def update(self, **kwargs: typing.Any) -> User:

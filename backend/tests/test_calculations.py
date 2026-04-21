@@ -7,36 +7,39 @@ Tests calculation logic against legal requirements from Beninese labor law.
 from datetime import datetime
 
 from api.models.enums import WorkerCategory
-from api.xlib.labor_code import (calculate_leave_pay,
-                                 calculate_notice_period_pay,
-                                 calculate_seniority, calculate_severance_pay)
+from api.xlib.labor_code import (
+    calculate_leave_pay,
+    calculate_notice_period_pay,
+    calculate_seniority,
+    calculate_severance_pay,
+)
 
 
 class TestSeniority:
     """Test seniority calculation."""
 
-    def test_seniority_exact_years(self):
+    def test_seniority_exact_years(self) -> None:
         """Test seniority for exact year periods."""
         start = datetime(2015, 1, 1)
         end = datetime(2020, 1, 1)
         seniority = calculate_seniority(start, end)
         assert seniority == 5.0
 
-    def test_seniority_with_months(self):
+    def test_seniority_with_months(self) -> None:
         """Test seniority with fractional months."""
         start = datetime(2015, 1, 1)
         end = datetime(2015, 7, 1)  # 6 months
         seniority = calculate_seniority(start, end)
         assert abs(seniority - 0.5) < 0.01
 
-    def test_seniority_less_than_one_year(self):
+    def test_seniority_less_than_one_year(self) -> None:
         """Test seniority less than one year."""
         start = datetime(2024, 6, 1)
         end = datetime(2025, 1, 1)  # 7 months
         seniority = calculate_seniority(start, end)
         assert 0.5 < seniority < 1.0
 
-    def test_seniority_eight_years(self):
+    def test_seniority_eight_years(self) -> None:
         """Test seniority calculation from legal example."""
         # Legal example: 8 years tenure
         start = datetime(2015, 1, 1)
@@ -48,24 +51,24 @@ class TestSeniority:
 class TestSeverancePay:
     """Test severance pay calculation (Article 44)."""
 
-    def test_severance_less_than_one_year(self):
+    def test_severance_less_than_one_year(self) -> None:
         """Severance is 0 for tenure < 1 year."""
         result = calculate_severance_pay(500000, 0.5)
         assert result == 0.0
 
-    def test_severance_one_year(self):
+    def test_severance_one_year(self) -> None:
         """Severance at minimum: 1 year × salary × 30%."""
         result = calculate_severance_pay(500000, 1.0)
         expected = 500000 * 0.30
         assert result == expected
 
-    def test_severance_five_years(self):
+    def test_severance_five_years(self) -> None:
         """Severance for 5 years (at bracket boundary)."""
         result = calculate_severance_pay(500000, 5.0)
         expected = 5 * 500000 * 0.30
         assert result == expected
 
-    def test_severance_legal_example_8_years(self):
+    def test_severance_legal_example_8_years(self) -> None:
         """
         Test with legal example from documentation.
 
@@ -87,7 +90,7 @@ class TestSeverancePay:
         assert result == expected
         assert result == 1275000
 
-    def test_severance_ten_years(self):
+    def test_severance_ten_years(self) -> None:
         """Severance at 10 years (bracket boundary)."""
         result = calculate_severance_pay(500000, 10.0)
 
@@ -101,7 +104,7 @@ class TestSeverancePay:
         assert result == expected
         assert result == 1625000
 
-    def test_severance_above_10_years(self):
+    def test_severance_above_10_years(self) -> None:
         """Severance above 10 years uses all brackets."""
         result = calculate_severance_pay(500000, 15.0)
 
@@ -122,26 +125,26 @@ class TestSeverancePay:
 class TestNoticePeriodPay:
     """Test notice period pay calculation (Article 53)."""
 
-    def test_notice_ouvrier(self):
+    def test_notice_ouvrier(self) -> None:
         """Worker (ouvrier): 1 month notice."""
         result = calculate_notice_period_pay(400000, WorkerCategory.OUVRIER)
         expected = 400000 * 1
         assert result == expected
 
-    def test_notice_employe(self):
+    def test_notice_employe(self) -> None:
         """Employee (employé): 1 month notice."""
         result = calculate_notice_period_pay(400000, WorkerCategory.EMPLOYE)
         expected = 400000 * 1
         assert result == expected
 
-    def test_notice_agent_maitrise(self):
+    def test_notice_agent_maitrise(self) -> None:
         """Supervisor (agent de maîtrise): 2 months notice."""
         result = calculate_notice_period_pay(700000, WorkerCategory.AGENT_MAITRISE)
         expected = 700000 * 2
         assert result == expected
         assert result == 1400000
 
-    def test_notice_cadre(self):
+    def test_notice_cadre(self) -> None:
         """Manager (cadre): 3 months notice."""
         result = calculate_notice_period_pay(2000000, WorkerCategory.CADRE)
         expected = 2000000 * 3
@@ -152,12 +155,12 @@ class TestNoticePeriodPay:
 class TestLeavePay:
     """Test leave compensation calculation (Article 113)."""
 
-    def test_leave_no_remaining_days(self):
+    def test_leave_no_remaining_days(self) -> None:
         """No compensation if no remaining days."""
         result = calculate_leave_pay(23077, 0)
         assert result == 0.0
 
-    def test_leave_legal_example(self):
+    def test_leave_legal_example(self) -> None:
         """
         Test with legal example.
 
@@ -170,7 +173,7 @@ class TestLeavePay:
         result = calculate_leave_pay(daily_salary, 10)
         assert abs(result - 230769.23) < 1  # Allow small rounding difference
 
-    def test_leave_full_month(self):
+    def test_leave_full_month(self) -> None:
         """Test leave with full month of remaining days."""
         # 600,000 / 26 = 23,077 per day
         daily_salary = 600000 / 26
@@ -181,7 +184,7 @@ class TestLeavePay:
 class TestTotalCompensation:
     """Test total compensation calculation."""
 
-    def test_total_8_years_employee(self):
+    def test_total_8_years_employee(self) -> None:
         """
         Complete example: 8-year employee terminated.
 

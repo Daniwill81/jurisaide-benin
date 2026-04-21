@@ -4,10 +4,9 @@ UserQuery.
 Query to fetch some key statistics to display in the interface on User.
 """
 
-from app.models import User
-from app.models.enums import RoleEnum
-from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
+
+from api.models import User
 
 from ._base import Query
 
@@ -15,7 +14,7 @@ from ._base import Query
 class UserQuery(Query[User]):
     """Fetch some key statistics to display in the interface."""
 
-    async def get_qs(self) -> FindMany[User]:
+    def get_qs(self) -> FindMany[User]:
         """Instantiate a new query object to avoid cache pollution."""
         qs: FindMany[User] = User.find()
 

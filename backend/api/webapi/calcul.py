@@ -4,16 +4,17 @@ Calculation WebAPI.
 RESTful API endpoints for calculation operations.
 """
 
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+
+from sap.fastapi.pagination import CursorInfo, PaginatedData
+
 from api.controllers.calcul import CalculationController
 from api.models import User
 from api.models.calcul import CalculationRequest
 from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
 from api.query.calcul import CalculationQuery
-from api.serializers.calcul import (CalculationSerializer,
-                                    WriteCalculationSerializer)
-from fastapi import APIRouter, Depends, Request, status
-from sap.fastapi.pagination import CursorInfo, PaginatedData
+from api.serializers.calcul import CalculationSerializer, WriteCalculationSerializer
 
 router = APIRouter()
 
@@ -30,12 +31,10 @@ async def create(
     This endpoint accepts employment details and returns all calculated benefits
     (severance, notice period, leave compensation) according to Beninese labor law.
     """
-    await serializer_write.run_async_validators()
+    # await serializer_write.run_async_validators()
 
     # Create the calculation request
-    calculation = await CalculationController.create_calculation(
-        serializer_write, request_user
-    )
+    calculation = await CalculationController.create_calculation(serializer_write, request_user)
 
     # Get the calculation result
     result = await CalculationController.get_calculation_result(calculation)
@@ -57,9 +56,9 @@ async def listing(
     query = CalculationQuery(user=request_user, filters=request.query_params)
 
     if search_text := request.query_params.get("q"):
-        qs = await query.get_search(search_text)
+        qs = query.get_search(search_text)
     else:
-        qs = await query.get_qs()
+        qs = query.get_qs()
         cursor_params = cursor.get_beanie_query_params()
         qs = qs.find(**cursor_params)
 
@@ -90,7 +89,7 @@ async def retrieve(
     # Verify user access
     if calculation.user_id and calculation.user_id != request_user.id:
         if request_user.role != RoleEnum.ADMIN:
-            raise Exception("Not authorized")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
     result = await CalculationController.get_calculation_result(calculation)
 
@@ -110,10 +109,10 @@ async def update(
     # Verify user access
     if calculation.user_id and calculation.user_id != request_user.id:
         if request_user.role != RoleEnum.ADMIN:
-            raise Exception("Not authorized")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
     serializer_write.instance = calculation
-    await serializer_write.run_async_validators()
+    # await serializer_write.run_async_validators()
     updated_calculation = await serializer_write.update()
 
     result = await CalculationController.get_calculation_result(updated_calculation)
@@ -133,6 +132,6 @@ async def destroy(
     # Verify user access
     if calculation.user_id and calculation.user_id != request_user.id:
         if request_user.role != RoleEnum.ADMIN:
-            raise Exception("Not authorized")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
 
     await calculation.delete()

@@ -6,11 +6,12 @@ based on Loi 98-004 and Loi 2017-05.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-from api.models.enums import ContractType, TerminationReason, WorkerCategory
 from beanie import Document, PydanticObjectId
 from pydantic import BaseModel, Field
+
+from api.models.enums import ContractType, TerminationReason, WorkerCategory
 
 
 class AuditTrail(BaseModel):
@@ -19,7 +20,7 @@ class AuditTrail(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     action: str  # 'created', 'updated', 'deleted'
     user_id: Optional[PydanticObjectId] = None
-    changes: dict = Field(default_factory=dict)
+    changes: dict[str, Any] = Field(default_factory=dict)
 
 
 class CalculationRequest(Document):
@@ -86,19 +87,13 @@ class CalculationResult(BaseModel):
 
     # Calculated Values
     seniority_years: float = Field(description="Years of employment")
-    severance_pay: float = Field(
-        default=0.0, description="Indemnité de Licenciement (Art. 44)"
-    )
-    notice_period_pay: float = Field(
-        default=0.0, description="Indemnité de Préavis (Art. 53)"
-    )
-    leave_pay: float = Field(
-        default=0.0, description="Indemnité de Congés Payés (Art. 113)"
-    )
+    severance_pay: float = Field(default=0.0, description="Indemnité de Licenciement (Art. 44)")
+    notice_period_pay: float = Field(default=0.0, description="Indemnité de Préavis (Art. 53)")
+    leave_pay: float = Field(default=0.0, description="Indemnité de Congés Payés (Art. 113)")
     total: float = Field(default=0.0, description="Total compensation in FCFA")
 
     # Legal References
-    articles: dict = Field(
+    articles: dict[str, str] = Field(
         default_factory=lambda: {
             "severance": "Art. 44",
             "notice": "Art. 53",
@@ -109,6 +104,4 @@ class CalculationResult(BaseModel):
 
     # Calculation Details
     calculation_timestamp: datetime = Field(default_factory=datetime.utcnow)
-    breakdown: dict = Field(
-        default_factory=dict, description="Detailed calculation breakdown"
-    )
+    breakdown: dict[str, Any] = Field(default_factory=dict, description="Detailed calculation breakdown")
