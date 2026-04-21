@@ -38,7 +38,6 @@ class UserAuth(BasicAuth):
         assert self.user_model and issubclass(self.user_model, Document)
 
         header_auth: str | None = request.headers.get("Authorization") or request.headers.get("X-Beans-Authorization")
-        logger.debug("DEBUGGING HEADERS => %s", str(request.headers))
 
         if not header_auth:
             raise HTTPException(HTTP_401, detail="Authentication required")
@@ -62,7 +61,7 @@ class UserAuth(BasicAuth):
 
         if auth_key:
             try:
-                return await self.user_model.find_one_or_404(operators.Or(operators.Eq(User.auth_key, user_key)))
+                return await self.user_model.find_one_or_404(User.auth_key == user_key)
             except (Object404Error, jwt.exceptions.InvalidTokenError) as exc:
                 raise HTTPException(HTTP_401, detail="Invalid basic auth credentials") from exc
 
