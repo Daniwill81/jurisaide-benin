@@ -31,6 +31,14 @@ async def current(request_user: User = Depends(user_auth.require([RoleEnum.ADMIN
     return UserSerializer.read(request_user)
 
 
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create(request: Request, serializer_write: WriteUserSerializer) -> UserSerializer:
+    """Register a new user."""
+    await serializer_write.run_async_validators(request=request)
+    instance = await serializer_write.create(request=request)
+    return UserSerializer.read(instance)
+
+
 @router.get("/", status_code=status.HTTP_200_OK)
 async def listing(
     request: Request,

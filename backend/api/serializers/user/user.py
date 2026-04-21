@@ -74,6 +74,20 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
         if self.instance and self.role == self.instance.role:
             return
 
+    async def create(self, **kwargs: typing.Any) -> User:
+        """Create a new user."""
+        user = User(
+            first_name=self.first_name,
+            last_name=self.last_name,
+            email=self.email,
+            sex=self.sex,
+            role=self.role,
+            is_active=True,
+        )
+        user.set_password(self.password)
+        await user.insert()
+        return user
+
     async def update(self, **kwargs: typing.Any) -> User:
         """Update the object in the database using the data extracted by the serializer."""
         assert self.instance
