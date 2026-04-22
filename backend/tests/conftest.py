@@ -390,15 +390,37 @@ def client() -> FakeApiClient:
             last_name="User",
         ),
     }
-    return FakeApiClient(auth_users)
+    fake_client = FakeApiClient(auth_users)
+    yield fake_client
+    # Automatic cleanup after test
+    fake_client.store.clear()
+    fake_client.users.clear()
+    fake_client.users.update({
+        "admin123": auth_users["admin123"],
+        "user123": auth_users["user123"],
+    })
 
 
 @pytest.fixture
 async def real_client():
-    """Create a real AsyncClient for the app."""
+    """Create a real AsyncClient for the app with automatic database cleanup."""
     from httpx import AsyncClient
 
     from AppMain.asgi import app
+    from beanie import init_beanie
+    from api.models.user import User
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+        
+        # Automatic cleanup after test
+        try:
+            await init_beanie(
+                database="jurisaide_test",
+                models=[User],
+            )
+            # Delete all test users created during test
+            await User.find({"email": {"$regex": ".*@example\\.com$"}}).delete()
+            await User.find({"email": "daniel@example.com"}).delete()
+        except Exception as e:
+            print(f"Warning: Could not clean up test data: {e}")
