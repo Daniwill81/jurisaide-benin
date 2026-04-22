@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from beanie import Document, Link
+from sap.beanie import Document, Link
 from pydantic import Field
 
 from api.models.enums import WorkerCategory
@@ -19,7 +19,6 @@ class CalculationAudit(Document):
     notice_period_pay: float
     leave_pay: float
     total: float
-    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
         name = "calculation_audits"

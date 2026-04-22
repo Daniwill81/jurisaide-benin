@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { apiFetch } from '@/lib/api';
 
 export interface CalculationResult {
+  id: string;
   seniority_years: number;
   severance_pay: number;
   notice_period_pay: number;

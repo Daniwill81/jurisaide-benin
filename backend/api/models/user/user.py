@@ -4,7 +4,8 @@ import passlib.pwd
 import pydantic
 import pymongo
 import pymongo.collation
-from beanie import Document, operators
+from beanie import operators
+from sap.beanie import Document
 
 from sap.beanie.mixins import PasswordMixin
 

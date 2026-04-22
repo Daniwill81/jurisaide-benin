@@ -1,11 +1,13 @@
 'use client';
 
 import { use, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/navbar';
 import { apiFetch } from '@/lib/api';
 
 export default function DossierDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [dossier, setDossier] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,11 +49,34 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
             <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-900">Historique des calculs</h2>
-                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">+ Ajouter</button>
+                <button
+                  onClick={() => router.push(`/calculateur?dossierId=${id}`)}
+                  className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                >
+                  + Ajouter
+                </button>
               </div>
-              <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-medium italic">Aucun calcul lié à ce dossier pour le moment.</p>
-              </div>
+
+              {dossier.calculation_requests?.length > 0 ? (
+                <div className="space-y-4">
+                  {dossier.calculation_requests.map((calc: any) => (
+                    <div key={calc.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer" onClick={() => router.push(`/calculateur/${calc.id}`)}>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{calc.employee_name}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Calculé le {new Date(calc.created_at).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-black text-indigo-600">{calc.total?.toLocaleString() || 0} XOF</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{calc.category}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 font-medium italic">Aucun calcul lié à ce dossier pour le moment.</p>
+                </div>
+              )}
             </section>
           </div>
 
@@ -59,9 +84,9 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
             <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <h2 className="font-bold text-slate-900 mb-6">Informations Client</h2>
               <div className="space-y-4">
-                <InfoRow label="Nom complet" value="En attente" />
-                <InfoRow label="Email" value="En attente" />
-                <InfoRow label="Téléphone" value="En attente" />
+                <InfoRow label="Nom complet" value={dossier.client_name || "Non renseigné"} />
+                <InfoRow label="Email" value={dossier.client_email || "Non renseigné"} />
+                <InfoRow label="Téléphone" value={dossier.client_phone || "Non renseigné"} />
               </div>
             </section>
 

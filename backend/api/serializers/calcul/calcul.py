@@ -5,11 +5,13 @@ Handle data validation and serialization for calculation requests and results.
 """
 
 import datetime
+import logging
 from typing import Any, Optional
 
 import pydantic
 from fastapi import Request
 
+from beanie import PydanticObjectId
 from sap.fastapi import ObjectSerializer, WriteObjectSerializer
 from sap.fastapi.pagination import CursorInfo, PaginatedData
 
@@ -22,6 +24,8 @@ from api.xlib.labor_code import (
     calculate_severance_pay,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     """Serialize the `CalculationRequest` object for retrieve and listing.
@@ -29,7 +33,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     Includes calculation results when available.
     """
 
-    id: str
+    id: PydanticObjectId
     employee_name: str
     employee_email: Optional[str] = None
     employee_id: Optional[str] = None
@@ -43,8 +47,8 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     remaining_leave_days: float = 0.0
     annual_leave_entitlement: float = 30.0
     status: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
+    created: datetime.datetime
+    updated: datetime.datetime
     notes: Optional[str] = None
 
     # Calculated fields (populated by controller)
@@ -55,6 +59,22 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     total: Optional[float] = None
     breakdown: Optional[dict[str, Any]] = None
     articles: Optional[dict[str, str]] = None
+
+    @classmethod
+    def read(cls, instance: CalculationRequest, exclude: set[str] | None = None) -> "CalculationSerializer":
+        """Read the calculation request from the model, excluding calculated fields."""
+        calculated_fields = {
+            "seniority_years",
+            "severance_pay",
+            "notice_period_pay",
+            "leave_pay",
+            "total",
+            "breakdown",
+            "articles",
+        }
+        if exclude:
+            calculated_fields.update(exclude)
+        return super().read(instance, exclude=calculated_fields)
 
     @classmethod
     def read_with_result(cls, instance: CalculationRequest, result: "CalculationResult") -> "CalculationSerializer":
@@ -68,15 +88,21 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
         Returns:
             CalculationSerializer instance with calculated fields populated
         """
-        serializer = cls.read(instance)
-        serializer.seniority_years = result.seniority_years
-        serializer.severance_pay = result.severance_pay
-        serializer.notice_period_pay = result.notice_period_pay
-        serializer.leave_pay = result.leave_pay
-        serializer.total = result.total
-        serializer.breakdown = result.breakdown
-        serializer.articles = result.articles
-        return serializer
+        try:
+            logger.debug(f"Building serializer with result for calculation {instance.id}")
+            serializer = cls.read(instance)
+            serializer.seniority_years = result.seniority_years
+            serializer.severance_pay = result.severance_pay
+            serializer.notice_period_pay = result.notice_period_pay
+            serializer.leave_pay = result.leave_pay
+            serializer.total = result.total
+            serializer.breakdown = result.breakdown
+            serializer.articles = result.articles
+            logger.info(f"Serializer built successfully for calculation {instance.id} (total={result.total})")
+            return serializer
+        except Exception as e:
+            logger.error(f"Error building serializer with result: {str(e)}", exc_info=True)
+            raise
 
     @classmethod
     async def read_page_with_results(
@@ -131,72 +157,103 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     @classmethod
     def validate_end_date(cls, value: datetime.date, info: pydantic.ValidationInfo) -> datetime.date:
         """Verify that end_date is after start_date."""
-        if "start_date" in info.data and value <= info.data["start_date"]:
-            raise ValueError("La date de fin doit être après la date de début.")
-        return value
+        try:
+            logger.debug(f"Validating end_date: {value}")
+            if "start_date" in info.data and value <= info.data["start_date"]:
+                logger.warning(f"Validation failed: end_date {value} <= start_date {info.data['start_date']}")
+                raise ValueError("La date de fin doit être après la date de début.")
+            logger.debug(f"End date validation passed: {value}")
+            return value
+        except ValueError:
+            raise
+        except Exception as e:
+            logger.error(f"Error validating end_date: {str(e)}", exc_info=True)
+            raise
 
     @pydantic.field_validator("daily_salary", mode="before")
     @classmethod
     def calculate_daily_salary(cls, value: Optional[float], info: pydantic.ValidationInfo) -> Optional[float]:
         """Calculate daily salary if not provided (monthly salary / 26)."""
-        if value is None and "avg_salary" in info.data:
-            return float(info.data["avg_salary"]) / 26.0
-        return value
+        try:
+            logger.debug(f"Validating daily_salary: {value}")
+            if value is None and "avg_salary" in info.data:
+                calculated = float(info.data["avg_salary"]) / 26.0
+                logger.info(f"Daily salary calculated from avg_salary: {calculated} ({info.data['avg_salary']} / 26)")
+                return calculated
+            return value
+        except Exception as e:
+            logger.error(f"Error calculating daily_salary: {str(e)}", exc_info=True)
+            raise
 
     def calculate_result(self) -> CalculationResult:
         """Calculate the result based on the serializer data."""
-        # Convert dates to datetime if they're date objects
-        start_dt = (
-            datetime.datetime.combine(self.start_date, datetime.time())
-            if isinstance(self.start_date, datetime.date)
-            else self.start_date
-        )
-        end_dt = (
-            datetime.datetime.combine(self.end_date, datetime.time())
-            if isinstance(self.end_date, datetime.date)
-            else self.end_date
-        )
+        try:
+            logger.info(f"Calculating result for employee: {self.employee_name}")
+            logger.debug(f"Calculation input: start={self.start_date}, end={self.end_date}, "
+                        f"salary={self.avg_salary}, category={self.category}")
+            
+            # Convert dates to datetime if they're date objects
+            start_dt = (
+                datetime.datetime.combine(self.start_date, datetime.time())
+                if isinstance(self.start_date, datetime.date)
+                else self.start_date
+            )
+            end_dt = (
+                datetime.datetime.combine(self.end_date, datetime.time())
+                if isinstance(self.end_date, datetime.date)
+                else self.end_date
+            )
 
-        # Calculate seniority
-        seniority_years = calculate_seniority(start_dt, end_dt)
+            # Calculate seniority
+            seniority_years = calculate_seniority(start_dt, end_dt)
+            logger.debug(f"Seniority: {seniority_years} years")
 
-        # Calculate components
-        severance = calculate_severance_pay(self.avg_salary, seniority_years)
-        notice_period = calculate_notice_period_pay(self.avg_salary, self.category)
-        leave = calculate_leave_pay(self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days)
+            # Calculate components
+            severance = calculate_severance_pay(self.avg_salary, seniority_years)
+            logger.debug(f"Severance: {severance} FCFA")
+            
+            notice_period = calculate_notice_period_pay(self.avg_salary, self.category)
+            logger.debug(f"Notice period: {notice_period} FCFA")
+            
+            leave = calculate_leave_pay(self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days)
+            logger.debug(f"Leave pay: {leave} FCFA")
 
-        total = severance + notice_period + leave
+            total = severance + notice_period + leave
+            logger.info(f"Result calculated: total={total} FCFA")
 
-        # Build breakdown details
-        breakdown = {
-            "seniority_years": round(seniority_years, 2),
-            "severance_pay": {
-                "amount": round(severance, 2),
-                "formula": "Selon Article 44 - Loi 98-004",
-                "details": self._get_severance_details(seniority_years),
-            },
-            "notice_period_pay": {
-                "amount": round(notice_period, 2),
-                "formula": "Selon Article 53 - Loi 98-004",
-                "category": self.category.value,
-                "months": self._get_notice_months(self.category),
-            },
-            "leave_pay": {
-                "amount": round(leave, 2),
-                "formula": "Selon Article 113 - Loi 98-004",
-                "remaining_days": self.remaining_leave_days,
-                "daily_rate": round(self.daily_salary or (self.avg_salary / 26.0), 2),
-            },
-        }
+            # Build breakdown details
+            breakdown = {
+                "seniority_years": round(seniority_years, 2),
+                "severance_pay": {
+                    "amount": round(severance, 2),
+                    "formula": "Selon Article 44 - Loi 98-004",
+                    "details": self._get_severance_details(seniority_years),
+                },
+                "notice_period_pay": {
+                    "amount": round(notice_period, 2),
+                    "formula": "Selon Article 53 - Loi 98-004",
+                    "category": self.category.value,
+                    "months": self._get_notice_months(self.category),
+                },
+                "leave_pay": {
+                    "amount": round(leave, 2),
+                    "formula": "Selon Article 113 - Loi 98-004",
+                    "remaining_days": self.remaining_leave_days,
+                    "daily_rate": round(self.daily_salary or (self.avg_salary / 26.0), 2),
+                },
+            }
 
-        return CalculationResult(
-            seniority_years=round(seniority_years, 2),
-            severance_pay=round(severance, 2),
-            notice_period_pay=round(notice_period, 2),
-            leave_pay=round(leave, 2),
-            total=round(total, 2),
-            breakdown=breakdown,
-        )
+            return CalculationResult(
+                seniority_years=round(seniority_years, 2),
+                severance_pay=round(severance, 2),
+                notice_period_pay=round(notice_period, 2),
+                leave_pay=round(leave, 2),
+                total=round(total, 2),
+                breakdown=breakdown,
+            )
+        except Exception as e:
+            logger.error(f"Error calculating result: {str(e)}", exc_info=True)
+            raise
 
     @staticmethod
     def _get_severance_details(seniority_years: float) -> dict[str, dict[str, float | str]]:
@@ -239,34 +296,42 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     async def update(self, **kwargs: Any) -> CalculationRequest:
         """Update the calculation request in the database."""
-        assert self.instance
+        try:
+            logger.info(f"Updating calculation: {self.employee_name}")
+            logger.debug(f"Update fields: start={self.start_date}, end={self.end_date}, salary={self.avg_salary}")
+            
+            assert self.instance
 
-        data_to_update = {
-            "employee_name": self.employee_name,
-            "employee_email": self.employee_email,
-            "employee_id": self.employee_id,
-            "start_date": (
-                datetime.datetime.combine(self.start_date, datetime.time())
-                if isinstance(self.start_date, datetime.date)
-                else self.start_date
-            ),
-            "end_date": (
-                datetime.datetime.combine(self.end_date, datetime.time())
-                if isinstance(self.end_date, datetime.date)
-                else self.end_date
-            ),
-            "avg_salary": self.avg_salary,
-            "daily_salary": self.daily_salary or (self.avg_salary / 26.0),
-            "category": self.category,
-            "contract_type": self.contract_type,
-            "termination_reason": self.termination_reason,
-            "remaining_leave_days": self.remaining_leave_days,
-            "annual_leave_entitlement": self.annual_leave_entitlement,
-            "notes": self.notes,
-            "updated_at": datetime.datetime.utcnow(),
-        }
+            data_to_update = {
+                "employee_name": self.employee_name,
+                "employee_email": self.employee_email,
+                "employee_id": self.employee_id,
+                "start_date": (
+                    datetime.datetime.combine(self.start_date, datetime.time())
+                    if isinstance(self.start_date, datetime.date)
+                    else self.start_date
+                ),
+                "end_date": (
+                    datetime.datetime.combine(self.end_date, datetime.time())
+                    if isinstance(self.end_date, datetime.date)
+                    else self.end_date
+                ),
+                "avg_salary": self.avg_salary,
+                "daily_salary": self.daily_salary or (self.avg_salary / 26.0),
+                "category": self.category,
+                "contract_type": self.contract_type,
+                "termination_reason": self.termination_reason,
+                "remaining_leave_days": self.remaining_leave_days,
+                "annual_leave_entitlement": self.annual_leave_entitlement,
+                "notes": self.notes,
+                "updated_at": datetime.datetime.utcnow(),
+            }
 
-        instance: CalculationRequest = self.instance.model_copy(update=data_to_update)
-        await instance.save()
-        self.instance = instance
-        return instance
+            instance: CalculationRequest = self.instance.model_copy(update=data_to_update)
+            await instance.save()
+            self.instance = instance
+            logger.info(f"Calculation updated successfully: {instance.id}")
+            return instance
+        except Exception as e:
+            logger.error(f"Error updating calculation: {str(e)}", exc_info=True)
+            raise

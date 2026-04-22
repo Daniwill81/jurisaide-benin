@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import List, Optional
 
-from beanie import Document, Link, PydanticObjectId
+from beanie import PydanticObjectId
+from sap.beanie import Document, Link
 from pydantic import Field
 
 from api.models.calcul import CalculationRequest
@@ -21,6 +22,11 @@ class Dossier(Document):
     description: Optional[str] = None
     status: str = Field(default="ouvert")  # ouvert, fermé, archivé
     user_id: PydanticObjectId
+    client_name: Optional[str] = None
+    client_email: Optional[str] = None
+    client_phone: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
     calculation_requests: List[Link[CalculationRequest]] = Field(default_factory=list)
@@ -34,5 +40,4 @@ class Dossier(Document):
         indexes = [
             "user_id",
             "status",
-            "created_at",
         ]

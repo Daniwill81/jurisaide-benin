@@ -31,6 +31,31 @@ from api.webapi import router_api
 from .settings import AppSettings, logger
 
 
+async def assertion_exception_handler(request: Request, exc: AssertionError) -> JSONResponse:
+    """Convert assertion errors (validation) to 422 responses."""
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": [{"msg": str(exc), "type": "assertion_error"}]},
+    )
+
+
+# Always log exception
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """Log all request validation errors to a file."""
+    logger.exception(exc.errors())
+    return await request_validation_exception_handler(request=request, exc=exc)
+
+
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Catch all unhandled exceptions and log them with full traceback."""
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}", exc_info=True)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Internal server error. Check logs for details."},
+    )
+
+
+
 @asynccontextmanager
 async def lifespan(current_app: FastAPI) -> typing.AsyncGenerator[None, None]:
     """Initialize beanie for main and audit databases on startup."""
@@ -109,6 +134,12 @@ app.add_middleware(
 )
 
 # Mount static folder
+
+# Apply exception handlers to main app
+app.add_exception_handler(AssertionError, assertion_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, global_exception_handler)
+
 app.routes.append(
     Mount(
         path="/static",
@@ -154,7 +185,13 @@ async def custom_redoc_html(request: Request) -> HTMLResponse:
 
 
 app_api.include_router(router_api)
-app.routes.append(Mount(path="/api/v1", app=app_api, name="api"))
+
+# Apply exception handlers to app_api as well
+app_api.add_exception_handler(AssertionError, assertion_exception_handler)
+app_api.add_exception_handler(RequestValidationError, validation_exception_handler)
+app_api.add_exception_handler(Exception, global_exception_handler)
+
+app.mount("/api/v1", app_api)
 
 # Mount Web App
 app_pages = FastAPI(title=AppSettings.PROJ_NAME, description="eHadj web application")
@@ -182,21 +219,7 @@ async def initialize_beanie() -> None:
     await BeanieClient.init(mongo_params=AppSettings.MONGO, document_models=document_models)
 
 
-@app.exception_handler(AssertionError)
-async def assertion_exception_handler(request: Request, exc: AssertionError) -> JSONResponse:
-    """Convert assertion errors (validation) to 422 responses."""
-    return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": [{"msg": str(exc), "type": "assertion_error"}]},
-    )
 
-
-# Always log exception
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """Log all request validation errors to a file."""
-    logger.exception(exc.errors())
-    return await request_validation_exception_handler(request=request, exc=exc)
 
 
 async def update_uvicorn_logger() -> None:

@@ -6,6 +6,7 @@ This module contains generic middleware to perform repetitive actions on each re
 Learn more: https://fastapi.tiangolo.com/tutorial/middleware/
 """
 
+import logging
 import typing
 
 from fastapi import Request
@@ -14,6 +15,8 @@ from starlette.responses import Response
 from starlette.types import Message
 
 from AppMain.settings import logger_access
+
+logger_middleware = logging.getLogger(__name__)
 
 
 class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
@@ -34,6 +37,7 @@ class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
         call_next: typing.Callable[[Request], typing.Awaitable[Response]],
     ) -> Response:
         """Load vars and launch call_next."""
+        logger_middleware.debug(f"Request: {request.method} {request.url.path} from {request.client}")
 
         if (
             "/pages/auth/login" not in str(request.url)
@@ -51,4 +55,10 @@ class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
                 body,
             )
 
-        return await call_next(request)
+        try:
+            response = await call_next(request)
+            logger_middleware.debug(f"Response: {response.status_code} for {request.method} {request.url.path}")
+            return response
+        except Exception as e:
+            logger_middleware.error(f"Error processing request {request.method} {request.url.path}: {str(e)}", exc_info=True)
+            raise

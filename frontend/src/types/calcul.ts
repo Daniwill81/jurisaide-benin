@@ -29,5 +29,5 @@ export interface CalculationRequest {
     termination_reason?: TerminationReason;
     remaining_leave_days: number;
     status: string;
-    created_at: string;
+    created: string;
 }

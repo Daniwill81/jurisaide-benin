@@ -11,6 +11,9 @@ export default function NewDossierPage() {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
+        client_name: '',
+        client_email: '',
+        client_phone: '',
         status: 'ouvert',
     });
 
@@ -50,6 +53,41 @@ export default function NewDossierPage() {
                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                             />
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nom du Client</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                    placeholder="ex: Jean Dupont"
+                                    value={formData.client_name}
+                                    onChange={e => setFormData({ ...formData, client_name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Email du Client</label>
+                                <input
+                                    type="email"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                    placeholder="ex: jean@email.com"
+                                    value={formData.client_email}
+                                    onChange={e => setFormData({ ...formData, client_email: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Téléphone du Client</label>
+                            <input
+                                type="tel"
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                placeholder="ex: +229 00 00 00 00"
+                                value={formData.client_phone}
+                                onChange={e => setFormData({ ...formData, client_phone: e.target.value })}
+                            />
+                        </div>
+
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Description / Notes</label>
                             <textarea

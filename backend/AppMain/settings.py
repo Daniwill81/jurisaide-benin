@@ -147,6 +147,11 @@ def logging_setter() -> dict[str, typing.Any]:
                 "handlers": ["console", "file"],
                 "propagate": False,
             },
+            "api": {
+                "level": "DEBUG",
+                "handlers": ["console", "file"],
+                "propagate": False,
+            },
         },
     }
 

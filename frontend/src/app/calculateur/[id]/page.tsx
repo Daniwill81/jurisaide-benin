@@ -22,8 +22,8 @@ interface Calculation {
   annual_leave_entitlement: number;
   status: string;
   notes: string;
-  created_at: string;
-  updated_at: string;
+  created: string;
+  updated: string;
   seniority_years: number;
   severance_pay: number;
   notice_period_pay: number;
@@ -286,11 +286,11 @@ export default function CalculationDetailPage() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Created</p>
-              <p className="text-gray-900">{formatDate(calculation.created_at)}</p>
+              <p className="text-gray-900">{formatDate(calculation.created)}</p>
             </div>
             <div>
               <p className="text-gray-500">Last Updated</p>
-              <p className="text-gray-900">{formatDate(calculation.updated_at)}</p>
+              <p className="text-gray-900">{formatDate(calculation.updated)}</p>
             </div>
             <div>
               <p className="text-gray-500">Status</p>

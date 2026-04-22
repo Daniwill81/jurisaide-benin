@@ -23,11 +23,14 @@ IMPORTANT:
 ================================================================================
 """
 
+import logging
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta  # type: ignore[import-untyped]
 
 from api.models.enums import WorkerCategory
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_seniority(start_date: datetime, end_date: datetime) -> float:
@@ -51,9 +54,15 @@ def calculate_seniority(start_date: datetime, end_date: datetime) -> float:
         - Fractional years are important for benefit calculations
         - Must include weekends and holidays in date calculation
     """
-    diff = relativedelta(end_date, start_date)
-    years = float(diff.years) + (float(diff.months) / 12.0) + (float(diff.days) / 365.25)
-    return years
+    try:
+        logger.debug(f"Calculating seniority: start_date={start_date}, end_date={end_date}")
+        diff = relativedelta(end_date, start_date)
+        years = float(diff.years) + (float(diff.months) / 12.0) + (float(diff.days) / 365.25)
+        logger.info(f"Seniority calculated: {years} years (years={diff.years}, months={diff.months}, days={diff.days})")
+        return years
+    except Exception as e:
+        logger.error(f"Error calculating seniority: {str(e)}", exc_info=True)
+        raise
 
 
 def calculate_severance_pay(avg_salary: float, seniority_years: float) -> float:
@@ -115,26 +124,40 @@ def calculate_severance_pay(avg_salary: float, seniority_years: float) -> float:
 
     ================================================================================
     """
-    if seniority_years < 1:
-        return 0.0
+    try:
+        logger.debug(f"Calculating severance: avg_salary={avg_salary}, seniority_years={seniority_years}")
+        
+        if seniority_years < 1:
+            logger.info(f"No severance for seniority < 1 year: {seniority_years}")
+            return 0.0
 
-    total = 0.0
+        total = 0.0
 
-    # First bracket: 1 to 5 years at 30%
-    years_in_bracket = min(seniority_years, 5)
-    total += years_in_bracket * avg_salary * 0.30
+        # First bracket: 1 to 5 years at 30%
+        years_in_bracket = min(seniority_years, 5)
+        bracket_1 = years_in_bracket * avg_salary * 0.30
+        total += bracket_1
+        logger.debug(f"Bracket 1 (1-5 years): {years_in_bracket} years × {avg_salary} × 0.30 = {bracket_1}")
 
-    # Second bracket: 6 to 10 years at 35% (cumulative)
-    if seniority_years > 5:
-        years_in_bracket = min(seniority_years - 5, 5)
-        total += years_in_bracket * avg_salary * 0.35
+        # Second bracket: 6 to 10 years at 35% (cumulative)
+        if seniority_years > 5:
+            years_in_bracket = min(seniority_years - 5, 5)
+            bracket_2 = years_in_bracket * avg_salary * 0.35
+            total += bracket_2
+            logger.debug(f"Bracket 2 (6-10 years): {years_in_bracket} years × {avg_salary} × 0.35 = {bracket_2}")
 
-    # Third bracket: > 10 years at 40% (cumulative)
-    if seniority_years > 10:
-        years_in_bracket = seniority_years - 10
-        total += years_in_bracket * avg_salary * 0.40
+        # Third bracket: > 10 years at 40% (cumulative)
+        if seniority_years > 10:
+            years_in_bracket = seniority_years - 10
+            bracket_3 = years_in_bracket * avg_salary * 0.40
+            total += bracket_3
+            logger.debug(f"Bracket 3 (>10 years): {years_in_bracket} years × {avg_salary} × 0.40 = {bracket_3}")
 
-    return total
+        logger.info(f"Severance pay calculated: {total} FCFA")
+        return total
+    except Exception as e:
+        logger.error(f"Error calculating severance pay: {str(e)}", exc_info=True)
+        raise
 
 
 def calculate_notice_period_pay(avg_salary: float, category: WorkerCategory) -> float:
@@ -205,13 +228,21 @@ def calculate_notice_period_pay(avg_salary: float, category: WorkerCategory) -> 
 
     ================================================================================
     """
-    months = 1
-    if category == WorkerCategory.AGENT_MAITRISE:
-        months = 2
-    elif category == WorkerCategory.CADRE:
-        months = 3
-
-    return avg_salary * months
+    try:
+        logger.debug(f"Calculating notice period: avg_salary={avg_salary}, category={category}")
+        
+        months = 1
+        if category == WorkerCategory.AGENT_MAITRISE:
+            months = 2
+        elif category == WorkerCategory.CADRE:
+            months = 3
+        
+        result = avg_salary * months
+        logger.info(f"Notice period pay calculated: {result} FCFA ({months} months for {category.value})")
+        return result
+    except Exception as e:
+        logger.error(f"Error calculating notice period pay: {str(e)}", exc_info=True)
+        raise
 
 
 def calculate_leave_pay(daily_salary: float, remaining_days: float) -> float:
@@ -252,4 +283,11 @@ def calculate_leave_pay(daily_salary: float, remaining_days: float) -> float:
     - Leave compensation: 23,077 × 10 = 230,770 FCFA
     ================================================================================
     """
-    return daily_salary * remaining_days
+    try:
+        logger.debug(f"Calculating leave pay: daily_salary={daily_salary}, remaining_days={remaining_days}")
+        result = daily_salary * remaining_days
+        logger.info(f"Leave pay calculated: {result} FCFA ({daily_salary} × {remaining_days} days)")
+        return result
+    except Exception as e:
+        logger.error(f"Error calculating leave pay: {str(e)}", exc_info=True)
+        raise

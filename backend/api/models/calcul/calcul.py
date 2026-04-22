@@ -8,7 +8,8 @@ based on Loi 98-004 and Loi 2017-05.
 from datetime import datetime
 from typing import Any, Optional
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
+from sap.beanie import Document
 from pydantic import BaseModel, Field
 
 from api.models.enums import ContractType, TerminationReason, WorkerCategory
@@ -54,8 +55,6 @@ class CalculationRequest(Document):
     annual_leave_entitlement: float = Field(default=30.0)
 
     # Audit & Metadata
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
     user_id: Optional[PydanticObjectId] = None
     status: str = Field(default="pending")  # pending, completed, archived
     notes: Optional[str] = None
@@ -68,7 +67,6 @@ class CalculationRequest(Document):
         indexes = [
             ("employee_name",),
             ("employee_email",),
-            ("created_at",),
             ("user_id",),
             ("status",),
         ]

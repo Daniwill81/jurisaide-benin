@@ -1,13 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Navbar from '@/components/layout/navbar';
 import { useCalculateur } from '@/hooks/useCalculateur';
+import { useDossier } from '@/hooks/useDossier';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 import { WorkerCategory, ContractType, TerminationReason } from '@/types/calcul';
 
 export default function CalculateurPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <CalculateurContent />
+    </Suspense>
+  );
+}
+
+function CalculateurContent() {
   const [step, setStep] = useState(1);
-  const { calculate, result, loading, error, reset } = useCalculateur();
+  const { calculate, result, loading, reset } = useCalculateur();
   const [formData, setFormData] = useState({
     employee_name: '',
     start_date: '',
@@ -19,6 +30,20 @@ export default function CalculateurPage() {
     remaining_leave_days: 0,
   });
 
+  const { createDossier, loading: dossierLoading } = useDossier();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dossierId = searchParams.get('dossierId');
+
+  const [showDossierModal, setShowDossierModal] = useState(false);
+  const [clientInfo, setClientInfo] = useState({
+    title: '',
+    description: '',
+    client_name: '',
+    client_email: '',
+    client_phone: '',
+  });
+
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
@@ -26,6 +51,54 @@ export default function CalculateurPage() {
     e.preventDefault();
     await calculate(formData);
     nextStep();
+  };
+
+  const handleSaveDossier = async () => {
+    if (!result) return;
+
+    if (dossierId) {
+      // Link to existing dossier directly
+      try {
+        const currentDossier = await apiFetch<any>(`/dossiers/${dossierId}/`);
+        const existingIds = currentDossier.calculation_requests?.map((c: any) => c.id) || [];
+
+        await apiFetch(`/dossiers/${dossierId}/`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: currentDossier.title,
+            description: currentDossier.description,
+            status: currentDossier.status,
+            calculation_requests: [...existingIds, result.id]
+          }),
+        });
+        router.push(`/dossiers/${dossierId}`);
+      } catch (err) {
+        console.error('Failed to link calculation to dossier', err);
+      }
+    } else {
+      // Open modal to create new dossier
+      setClientInfo({
+        title: `Dossier - ${formData.employee_name}`,
+        description: `Calcul d'indemnités effectué le ${new Date().toLocaleDateString('fr-FR')}`,
+        client_name: formData.employee_name,
+        client_email: '',
+        client_phone: '',
+      });
+      setShowDossierModal(true);
+    }
+  };
+
+  const confirmCreateDossier = async () => {
+    if (!result) return;
+    try {
+      const dossier = await createDossier({
+        ...clientInfo,
+        calculation_requests: [result.id]
+      });
+      router.push(`/dossiers/${dossier.id}`);
+    } catch (err) {
+      console.error('Failed to create dossier', err);
+    }
   };
 
   return (
@@ -164,12 +237,85 @@ export default function CalculateurPage() {
 
               <div className="flex gap-4">
                 <button onClick={() => { reset(); setStep(1); }} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">Nouveau calcul</button>
-                <button className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">Sauvegarder le dossier</button>
+                <button
+                  onClick={handleSaveDossier}
+                  disabled={dossierLoading}
+                  className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                >
+                  {dossierLoading ? 'Enregistrement...' : 'Sauvegarder le dossier'}
+                </button>
               </div>
             </div>
           )}
         </div>
       </main>
+
+      {/* Dossier Creation Modal */}
+      {showDossierModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-300">
+            <h2 className="text-2xl font-black text-slate-900 mb-2">Finaliser le dossier</h2>
+            <p className="text-slate-500 mb-6">Complétez les informations pour créer le dossier juridique.</p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Titre du dossier</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  value={clientInfo.title}
+                  onChange={e => setClientInfo({ ...clientInfo, title: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nom du Client</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                    value={clientInfo.client_name}
+                    onChange={e => setClientInfo({ ...clientInfo, client_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Téléphone</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                    value={clientInfo.client_phone}
+                    onChange={e => setClientInfo({ ...clientInfo, client_phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Email du Client</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  value={clientInfo.client_email}
+                  onChange={e => setClientInfo({ ...clientInfo, client_email: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={() => setShowDossierModal(false)}
+                className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmCreateDossier}
+                disabled={dossierLoading}
+                className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-50"
+              >
+                {dossierLoading ? 'Création...' : 'Créer le dossier'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

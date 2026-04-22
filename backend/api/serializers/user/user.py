@@ -26,7 +26,8 @@ class UserSerializer(ObjectSerializer[User]):
     email: pydantic.EmailStr
     is_active: bool
     role: RoleEnum
-    # created_at: datetime.datetime | None = None
+    created: datetime.datetime
+    updated: datetime.datetime
 
     @classmethod
     def get_id(cls, instance: User) -> str:

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { apiFetch } from '@/lib/api';
 
 export function useDossier() {
   const [dossiers, setDossiers] = useState([]);
@@ -29,5 +30,22 @@ export function useDossier() {
     }
   };
 
-  return { dossiers, loading, error, fetchDossiers };
+  const createDossier = async (data: any) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await apiFetch<any>('/dossiers/', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return response;
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la création du dossier');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { dossiers, loading, error, fetchDossiers, createDossier };
 }
