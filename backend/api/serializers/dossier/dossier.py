@@ -40,6 +40,16 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     created: datetime
     updated: datetime
 
+    @classmethod
+    def get_calculation_requests(cls, instance: Dossier) -> List[CalculationSerializer]:
+        """Filter out unfetched calculation requests."""
+        from sap.beanie import Link
+        return [
+            CalculationSerializer.read(req)
+            for req in instance.calculation_requests
+            if not isinstance(req, Link)
+        ]
+
 
 class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
     title: str
