@@ -28,9 +28,6 @@ class CalculationQuery(Query[CalculationRequest]):
         if filter_employee_email := self.filters.get("employee_email"):
             qs = qs.find(CalculationRequest.employee_email == filter_employee_email)
 
-        # Filter by employee id
-        if filter_employee_id := self.filters.get("employee_id"):
-            qs = qs.find(CalculationRequest.employee_id == filter_employee_id)
 
         # Filter by category
         if filter_category := self.filters.get("category"):

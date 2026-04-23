@@ -36,7 +36,6 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     id: PydanticObjectId
     employee_name: str
     employee_email: Optional[str] = None
-    employee_id: Optional[str] = None
     employee_phone: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
@@ -139,7 +138,6 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
 
     employee_name: str
     employee_email: Optional[pydantic.EmailStr] = None
-    employee_id: Optional[str] = None
     employee_phone: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
@@ -309,7 +307,6 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
             data_to_update = {
                 "employee_name": self.employee_name,
                 "employee_email": self.employee_email,
-                "employee_id": self.employee_id,
                 "employee_phone": self.employee_phone,
                 "start_date": (
                     datetime.datetime.combine(self.start_date, datetime.time())

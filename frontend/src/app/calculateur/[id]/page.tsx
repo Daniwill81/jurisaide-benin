@@ -10,7 +10,6 @@ interface Calculation {
   id: string;
   employee_name: string;
   employee_email: string;
-  employee_id: string;
   start_date: string;
   end_date: string;
   avg_salary: number;
@@ -162,12 +161,6 @@ export default function CalculationDetailPage() {
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
                   <p className="text-gray-900 break-all">{calculation.employee_email}</p>
                 </div>
-                {calculation.employee_id && (
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Employee ID</p>
-                    <p className="text-gray-900">{calculation.employee_id}</p>
-                  </div>
-                )}
               </div>
 
               <hr className="my-6" />

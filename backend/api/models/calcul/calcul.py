@@ -36,7 +36,6 @@ class CalculationRequest(Document):
     # Employee Information
     employee_name: str
     employee_email: Optional[str] = None
-    employee_id: Optional[str] = None
     employee_phone: Optional[str] = None
 
     # Employment Period

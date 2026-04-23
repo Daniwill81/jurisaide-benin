@@ -69,8 +69,10 @@ async def retrieve(
     try:
         logger.info(f"Retrieving dossier {pk} for user {request_user.id}")
         instance = await Dossier.find_one(
-            Dossier.id == PydanticObjectId(pk), Dossier.user_id == request_user.id, fetch_links=True
+            Dossier.id == PydanticObjectId(pk), Dossier.user_id == request_user.id
         )
+        if instance:
+            await instance.fetch_all_links()
         if not instance:
             logger.warning(f"Dossier {pk} not found for user {request_user.id}")
             raise HTTPException(status_code=404, detail="Dossier not found")
@@ -100,6 +102,7 @@ async def update(
 
         serializer_write.instance = instance
         await serializer_write.update()
+        await instance.fetch_all_links()
         logger.info(f"Dossier {pk} updated successfully")
         return DossierSerializer.read(instance)
     except HTTPException:

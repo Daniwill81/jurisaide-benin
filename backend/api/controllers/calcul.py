@@ -36,7 +36,7 @@ class CalculationController:
             calculation_data: dict[str, Any] = {
                 "employee_name": serializer.employee_name,
                 "employee_email": serializer.employee_email,
-                "employee_id": serializer.employee_id,
+                "employee_phone": serializer.employee_phone,
                 "start_date": datetime.combine(serializer.start_date, datetime.min.time()),
                 "end_date": datetime.combine(serializer.end_date, datetime.min.time()),
                 "avg_salary": serializer.avg_salary,

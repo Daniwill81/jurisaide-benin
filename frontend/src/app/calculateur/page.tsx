@@ -54,6 +54,7 @@ function CalculateurContent() {
           setFormData(prev => ({ 
             ...prev, 
             employee_name: d.client_name || '',
+            employee_email: d.client_email || '',
             employee_phone: d.client_phone || ''
           }));
           setClientInfo({
@@ -111,8 +112,8 @@ function CalculateurContent() {
         title: `Dossier - ${formData.employee_name}`,
         description: `Calcul d'indemnités effectué le ${new Date().toLocaleDateString('fr-FR')}`,
         client_name: formData.employee_name,
-        client_email: '',
-        client_phone: '',
+        client_email: formData.employee_email,
+        client_phone: formData.employee_phone,
       });
       setShowDossierModal(true);
     }

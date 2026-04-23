@@ -8,7 +8,6 @@ import Link from 'next/link';
 interface FormData {
   employee_name: string;
   employee_email: string;
-  employee_id: string;
   start_date: string;
   end_date: string;
   avg_salary: number;
@@ -80,7 +79,6 @@ export default function EditCalculationPage() {
         setFormData({
           employee_name: data.employee_name,
           employee_email: data.employee_email || '',
-          employee_id: data.employee_id || '',
           start_date: data.start_date,
           end_date: data.end_date,
           avg_salary: data.avg_salary,
@@ -279,16 +277,6 @@ export default function EditCalculationPage() {
                     type="email"
                     name="employee_email"
                     value={formData.employee_email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
-                  <input
-                    type="text"
-                    name="employee_id"
-                    value={formData.employee_id}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                   />
