@@ -70,6 +70,10 @@ class _Settings(pydantic_settings.BaseSettings):
     AWS_ACCESS_KEY_SECRET: str = ""
     AWS_REGION: str = "us-east-1"
 
+    # AI Configuration
+    OPENAI_API_KEY: str = ""
+    VECTOR_DB_PATH: str = "./data/vector_db"
+
     @property
     def is_prod(self) -> bool:
         """Return True if production environment."""

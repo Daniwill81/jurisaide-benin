@@ -69,6 +69,10 @@ class CalculationRequest(Document):
     breakdown: Optional[dict[str, Any]] = None
     articles: Optional[dict[str, str]] = None
     
+    # AI Enrichment
+    dispute_category: Optional[str] = None
+    ai_citations: list[dict[str, Any]] = Field(default_factory=list)
+    
     audit_trail: list[AuditTrail] = Field(default_factory=list)
 
     class Settings:
@@ -110,6 +114,10 @@ class CalculationResult(BaseModel):
             "legal_basis": "Loi 98-004 du 27 janvier 1998",
         }
     )
+
+    # AI Enrichment
+    dispute_category: Optional[str] = None
+    ai_citations: list[dict[str, Any]] = Field(default_factory=list)
 
     # Calculation Details
     calculation_timestamp: datetime = Field(default_factory=datetime.utcnow)
