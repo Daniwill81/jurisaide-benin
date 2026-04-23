@@ -88,7 +88,7 @@ function DossierCard({ dossier }: { dossier: any }) {
             </div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">{dossier.user_id ? 'Client Asssocié' : 'Calcul Libre'}</span>
           </div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(dossier.created_at).toLocaleDateString('fr-FR')}</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(dossier.created).toLocaleDateString('fr-FR')}</p>
         </div>
       </div>
     </Link>

@@ -25,8 +25,6 @@ class Dossier(Document):
     client_name: Optional[str] = None
     client_email: Optional[str] = None
     client_phone: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
     calculation_requests: List[Link[CalculationRequest]] = Field(default_factory=list)

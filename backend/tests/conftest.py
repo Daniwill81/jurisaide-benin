@@ -344,7 +344,7 @@ class FakeApiClient:
             annual_leave_entitlement=serializer.annual_leave_entitlement,
             status=calculation.status,
             created=calculation.created,
-            updated_at=datetime.utcnow(),
+            updated=datetime.utcnow(),
             user_id=calculation.user_id,
             notes=serializer.notes,
             audit_trail=calculation.audit_trail,

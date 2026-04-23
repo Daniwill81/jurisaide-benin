@@ -102,6 +102,5 @@ class WriteUserSerializer(WriteObjectSerializer[User]):
         self.instance.sex = self.sex
         self.instance.email = self.email
         self.instance.role = self.role
-        self.instance.updated_at = datetime.datetime.utcnow()
         await self.instance.save()
         return self.instance

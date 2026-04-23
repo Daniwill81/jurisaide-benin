@@ -324,7 +324,6 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
                 "remaining_leave_days": self.remaining_leave_days,
                 "annual_leave_entitlement": self.annual_leave_entitlement,
                 "notes": self.notes,
-                "updated_at": datetime.datetime.utcnow(),
             }
 
             instance: CalculationRequest = self.instance.model_copy(update=data_to_update)

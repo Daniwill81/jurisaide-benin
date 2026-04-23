@@ -37,8 +37,8 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     work_history: List[WorkHistorySerializer]
     dispute_details: Optional[DisputeDetailsSerializer] = None
     calculation_requests: List[CalculationSerializer] = Field(default_factory=list)
-    created_at: datetime
-    updated_at: datetime
+    created: datetime
+    updated: datetime
 
 
 class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
@@ -80,6 +80,5 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
         self.instance.work_history = [WorkHistory(**wh) for wh in self.work_history]
         self.instance.dispute_details = DisputeDetails(**self.dispute_details) if self.dispute_details else None
         self.instance.calculation_requests = self.calculation_requests
-        self.instance.updated_at = datetime.utcnow()
         await self.instance.save()
         return self.instance

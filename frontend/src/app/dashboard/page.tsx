@@ -64,7 +64,7 @@ export default function DashboardPage() {
                           </div>
                           <div>
                             <h3 className="font-bold text-slate-900">{d.title}</h3>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Crée le {new Date(d.created_at).toLocaleDateString('fr-FR')}</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Crée le {new Date(d.created).toLocaleDateString('fr-FR')}</p>
                           </div>
                         </div>
                         <span className="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-widest rounded-full">{d.status}</span>

@@ -63,7 +63,7 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
                     <div key={calc.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer" onClick={() => router.push(`/calculateur/${calc.id}`)}>
                       <div>
                         <p className="text-sm font-bold text-slate-900">{calc.employee_name}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">Calculé le {new Date(calc.created_at).toLocaleDateString()}</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Calculé le {new Date(calc.created).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-black text-indigo-600">{calc.total?.toLocaleString() || 0} XOF</p>
@@ -93,7 +93,7 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
             <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
               <h2 className="font-bold text-slate-900 mb-4">Timeline de l'affaire</h2>
               <div className="space-y-6 relative border-l-2 border-slate-100 ml-2 pl-6 py-2">
-                <TimelineItem date={new Date(dossier.created_at).toLocaleDateString()} text="Ouverture du dossier" active />
+                <TimelineItem date={new Date(dossier.created).toLocaleDateString()} text="Ouverture du dossier" active />
               </div>
             </section>
           </div>
