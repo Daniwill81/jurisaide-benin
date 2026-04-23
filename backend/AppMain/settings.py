@@ -65,10 +65,13 @@ class _Settings(pydantic_settings.BaseSettings):
     CRYPTO_SECRET: str  # a key used for encryption
     TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # AWS / object storage
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_ACCESS_KEY_SECRET: str = ""
+    # Files Storage
+    AWS_ENDPOINT: str
+    AWS_ACCESS_KEY_ID: str
+    AWS_ACCESS_KEY_SECRET: str
     AWS_REGION: str = "us-east-1"
+    AWS_S3_BUCKET: str = "e-fraud-demo-bucket-1"
+    AWS_USE_SSL: bool = True
 
     # AI Configuration
     OPENAI_API_KEY: str = ""
