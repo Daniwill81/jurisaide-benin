@@ -9,13 +9,19 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
   const [dossier, setDossier] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDossier = async () => {
       try {
         const response = await apiFetch<any>(`/dossiers/${id}/`);
         setDossier(response);
+        
+        // Fetch documents for this dossier
+        const docsResponse = await apiFetch<any[]>(`/documents/list?dossier_id=${id}`);
+        setDocuments(docsResponse);
       } catch (err) {
         console.error(err);
       } finally {
@@ -24,6 +30,27 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
     };
     fetchDossier();
   }, [id]);
+
+  const handleGenerateDocument = async (calcId: string, type: string) => {
+    setGenerating(`${calcId}-${type}`);
+    try {
+      const doc = await apiFetch<any>('/documents/generer', {
+        method: 'POST',
+        body: JSON.stringify({
+          type_doc: type,
+          dossier_id: id,
+          audit_id: calcId
+        })
+      });
+      setDocuments([doc, ...documents]);
+      alert('Document généré avec succès !');
+    } catch (err) {
+      console.error('Failed to generate document', err);
+      alert('Erreur lors de la génération du document');
+    } finally {
+      setGenerating(null);
+    }
+  };
 
   const handleStatusChange = async () => {
     const newStatus = dossier.status === 'ouvert' ? 'fermé' : 'ouvert';
@@ -109,14 +136,32 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
               {dossier.calculation_requests?.length > 0 ? (
                 <div className="space-y-4">
                   {dossier.calculation_requests.map((calc: any) => (
-                    <div key={calc.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all cursor-pointer" onClick={() => router.push(`/calculateur/${calc.id}`)}>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{calc.employee_name}</p>
-                        <p className="text-[10px] text-slate-500 font-medium">Calculé le {new Date(calc.created).toLocaleDateString()}</p>
+                    <div key={calc.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-all">
+                      <div className="flex items-center justify-between mb-4 cursor-pointer" onClick={() => router.push(`/calculateur/${calc.id}`)}>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{calc.employee_name}</p>
+                          <p className="text-[10px] text-slate-500 font-medium">Calculé le {new Date(calc.created).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-indigo-600">{calc.total?.toLocaleString() || 0} XOF</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">{calc.category}</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-black text-indigo-600">{calc.total?.toLocaleString() || 0} XOF</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">{calc.category}</p>
+                      <div className="flex gap-2 border-t border-slate-200 pt-4">
+                        <button 
+                          disabled={generating === `${calc.id}-lettre_licenciement`}
+                          onClick={() => handleGenerateDocument(calc.id, 'lettre_licenciement')}
+                          className="flex-1 py-2 bg-white text-[10px] font-bold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {generating === `${calc.id}-lettre_licenciement` ? 'Génération...' : 'Lettre Licenciement'}
+                        </button>
+                        <button 
+                          disabled={generating === `${calc.id}-recu_indemnite`}
+                          onClick={() => handleGenerateDocument(calc.id, 'recu_indemnite')}
+                          className="flex-1 py-2 bg-white text-[10px] font-bold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-900 hover:text-white transition-all disabled:opacity-50"
+                        >
+                          {generating === `${calc.id}-recu_indemnite` ? 'Génération...' : 'Reçu Indemnités'}
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -124,6 +169,36 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
               ) : (
                 <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                   <p className="text-slate-400 font-medium italic">Aucun calcul lié à ce dossier pour le moment.</p>
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Documents générés</h2>
+              {documents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {documents.map((doc: any) => (
+                    <a 
+                      key={doc.id} 
+                      href={doc.url_s3} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:bg-white transition-all group"
+                    >
+                      <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M13 13H8"/><path d="M13 17H8"/></svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-900 truncate">{doc.titre}</p>
+                        <p className="text-[10px] text-slate-500 uppercase font-bold">{new Date(doc.date_generation).toLocaleDateString()}</p>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 group-hover:text-indigo-600"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 font-medium italic">Aucun document généré pour le moment.</p>
                 </div>
               )}
             </section>

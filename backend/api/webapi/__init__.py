@@ -13,6 +13,7 @@ from .calcul import router as router_calcul
 from .dossier import router as router_dossier
 from .jurisprudence import router as router_jurisprudence
 from .user import router as router_user
+from .document import router as router_document
 
 router_api = APIRouter(redirect_slashes=True)
 
@@ -21,3 +22,4 @@ router_api.include_router(router_user, prefix="/users", tags=["users"])
 router_api.include_router(router_calcul, prefix="/calculations", tags=["calculations"])
 router_api.include_router(router_dossier, prefix="/dossiers", tags=["dossiers"])
 router_api.include_router(router_jurisprudence, prefix="/jurisprudence", tags=["jurisprudence"])
+router_api.include_router(router_document, prefix="/documents", tags=["documents"])
