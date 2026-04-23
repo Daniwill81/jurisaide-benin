@@ -1,7 +1,7 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
 from beanie import PydanticObjectId
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from sap.fastapi.pagination import CursorInfo, PaginatedData
 
@@ -69,9 +69,7 @@ async def retrieve(
     try:
         logger.info(f"Retrieving dossier {pk} for user {request_user.id}")
         instance = await Dossier.find_one(
-            Dossier.id == PydanticObjectId(pk), 
-            Dossier.user_id == request_user.id,
-            fetch_links=True
+            Dossier.id == PydanticObjectId(pk), Dossier.user_id == request_user.id, fetch_links=True
         )
         if not instance:
             logger.warning(f"Dossier {pk} not found for user {request_user.id}")

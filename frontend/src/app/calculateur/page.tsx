@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import Navbar from '@/components/layout/navbar';
 import { useCalculateur } from '@/hooks/useCalculateur';
 import { useDossier } from '@/hooks/useDossier';
@@ -21,6 +21,8 @@ function CalculateurContent() {
   const { calculate, result, loading, reset } = useCalculateur();
   const [formData, setFormData] = useState({
     employee_name: '',
+    employee_email: '',
+    employee_phone: '',
     start_date: '',
     end_date: '',
     avg_salary: 0,
@@ -44,6 +46,31 @@ function CalculateurContent() {
     client_phone: '',
   });
 
+  useEffect(() => {
+    if (dossierId) {
+      const fetchDossier = async () => {
+        try {
+          const d = await apiFetch<any>(`/dossiers/${dossierId}/`);
+          setFormData(prev => ({ 
+            ...prev, 
+            employee_name: d.client_name || '',
+            employee_phone: d.client_phone || ''
+          }));
+          setClientInfo({
+            title: d.title,
+            description: d.description,
+            client_name: d.client_name,
+            client_email: d.client_email,
+            client_phone: d.client_phone,
+          });
+        } catch (err) {
+          console.error('Failed to fetch dossier for auto-fill', err);
+        }
+      };
+      fetchDossier();
+    }
+  }, [dossierId]);
+
   const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
@@ -65,8 +92,11 @@ function CalculateurContent() {
         await apiFetch(`/dossiers/${dossierId}/`, {
           method: 'PUT',
           body: JSON.stringify({
-            title: currentDossier.title,
-            description: currentDossier.description,
+            title: clientInfo.title,
+            description: clientInfo.description,
+            client_name: formData.employee_name || clientInfo.client_name,
+            client_email: formData.employee_email || clientInfo.client_email,
+            client_phone: formData.employee_phone || clientInfo.client_phone,
             status: currentDossier.status,
             calculation_requests: [...existingIds, result.id]
           }),
@@ -133,6 +163,26 @@ function CalculateurContent() {
                     placeholder="ex: Jean Dupont"
                     value={formData.employee_name}
                     onChange={e => setFormData({ ...formData, employee_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Email de l'employé</label>
+                  <input
+                    type="email"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
+                    placeholder="ex: jean.dupont@email.com"
+                    value={formData.employee_email}
+                    onChange={e => setFormData({ ...formData, employee_email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Téléphone de l'employé</label>
+                  <input
+                    type="tel"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none"
+                    placeholder="ex: +229 00 00 00 00"
+                    value={formData.employee_phone}
+                    onChange={e => setFormData({ ...formData, employee_phone: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

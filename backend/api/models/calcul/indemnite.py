@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from sap.beanie import Document, Link
 from pydantic import Field
+
+from sap.beanie import Document, Link
 
 from api.models.enums import WorkerCategory
 from api.models.user.user import User

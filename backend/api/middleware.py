@@ -60,5 +60,7 @@ class InitGlobalParamsMiddleware(BaseHTTPMiddleware):
             logger_middleware.debug(f"Response: {response.status_code} for {request.method} {request.url.path}")
             return response
         except Exception as e:
-            logger_middleware.error(f"Error processing request {request.method} {request.url.path}: {str(e)}", exc_info=True)
+            logger_middleware.error(
+                f"Error processing request {request.method} {request.url.path}: {str(e)}", exc_info=True
+            )
             raise

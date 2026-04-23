@@ -395,24 +395,26 @@ def client() -> FakeApiClient:
     # Automatic cleanup after test
     fake_client.store.clear()
     fake_client.users.clear()
-    fake_client.users.update({
-        "admin123": auth_users["admin123"],
-        "user123": auth_users["user123"],
-    })
+    fake_client.users.update(
+        {
+            "admin123": auth_users["admin123"],
+            "user123": auth_users["user123"],
+        }
+    )
 
 
 @pytest.fixture
 async def real_client():
     """Create a real AsyncClient for the app with automatic database cleanup."""
+    from beanie import init_beanie
     from httpx import AsyncClient
 
-    from AppMain.asgi import app
-    from beanie import init_beanie
     from api.models.user import User
+    from AppMain.asgi import app
 
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
-        
+
         # Automatic cleanup after test
         try:
             await init_beanie(

@@ -5,8 +5,8 @@ import pydantic
 import pymongo
 import pymongo.collation
 from beanie import operators
-from sap.beanie import Document
 
+from sap.beanie import Document
 from sap.beanie.mixins import PasswordMixin
 
 from api.models.enums import RoleEnum, SexEnum

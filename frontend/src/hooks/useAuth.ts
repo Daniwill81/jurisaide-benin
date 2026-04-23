@@ -35,7 +35,15 @@ export function useAuth() {
     localStorage.setItem('user', JSON.stringify(user));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (authKey) {
+      const { logoutApi } = await import('@/lib/auth');
+      try {
+        await logoutApi(authKey);
+      } catch (e) {
+        console.error('Logout API failed', e);
+      }
+    }
     setUser(null);
     setAuthKey(null);
     localStorage.removeItem('auth_key');

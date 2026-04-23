@@ -38,15 +38,20 @@ class UserAuth(BasicAuth):
         """Provide the authenticated user to views that require it."""
         try:
             logger_auth.debug(f"Authenticating request from {request.client}")
-            
+
             if not (self.user_model and issubclass(self.user_model, Document)):
                 logger_auth.error(f"UserAuth misconfigured: user_model={self.user_model}, Document={Document}")
                 # Fallback to a more flexible check if the exact class match fails due to reloads
                 from beanie import Document as BeanieDocument
-                if not (self.user_model and issubclass(self.user_model, BeanieDocument)):
-                    assert self.user_model and issubclass(self.user_model, Document), f"user_model {self.user_model} must be a Document"
 
-            header_auth: str | None = request.headers.get("Authorization") or request.headers.get("X-Beans-Authorization")
+                if not (self.user_model and issubclass(self.user_model, BeanieDocument)):
+                    assert self.user_model and issubclass(
+                        self.user_model, Document
+                    ), f"user_model {self.user_model} must be a Document"
+
+            header_auth: str | None = request.headers.get("Authorization") or request.headers.get(
+                "X-Beans-Authorization"
+            )
 
             if not header_auth:
                 logger_auth.warning(f"No auth header found in request from {request.client}")
@@ -100,7 +105,7 @@ class UserAuth(BasicAuth):
         async def auth_with_perms(request: Request) -> User:
             try:
                 logger_auth.debug(f"Checking permissions {perms} for request from {request.client}")
-                
+
                 user: User = await self.authenticate(request=request)
 
                 if not user.has_perms(perms):

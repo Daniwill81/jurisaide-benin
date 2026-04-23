@@ -55,7 +55,6 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
-
 @asynccontextmanager
 async def lifespan(current_app: FastAPI) -> typing.AsyncGenerator[None, None]:
     """Initialize beanie for main and audit databases on startup."""
@@ -122,6 +121,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 # List of allowed origins (replace with your actual domains)
 origins = [
     "http://localhost:3000",
+    "https://jurisaide-benin-frontend.onrender.com",
 ]
 
 # Enable cors
@@ -217,9 +217,6 @@ app_pages.add_middleware(SessionMiddleware, session_cookie="starlette", secret_k
 async def initialize_beanie() -> None:
     """Initialize beanie on startup."""
     await BeanieClient.init(mongo_params=AppSettings.MONGO, document_models=document_models)
-
-
-
 
 
 async def update_uvicorn_logger() -> None:

@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import List, Optional
 
 from beanie import PydanticObjectId
-from sap.beanie import Document, Link
 from pydantic import Field
+
+from sap.beanie import Document, Link
 
 from api.models.calcul import CalculationRequest
 

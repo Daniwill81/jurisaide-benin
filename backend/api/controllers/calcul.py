@@ -27,9 +27,11 @@ class CalculationController:
         """Create a new calculation request."""
         try:
             logger.info(f"Creating calculation for user {user.id if user else 'anonymous'}")
-            logger.debug(f"Calculation data: employee={serializer.employee_name}, email={serializer.employee_email}, "
-                        f"category={serializer.category}, salary={serializer.avg_salary}")
-            
+            logger.debug(
+                f"Calculation data: employee={serializer.employee_name}, email={serializer.employee_email}, "
+                f"category={serializer.category}, salary={serializer.avg_salary}"
+            )
+
             # Create instance from serializer data
             calculation_data: dict[str, Any] = {
                 "employee_name": serializer.employee_name,
@@ -75,7 +77,7 @@ class CalculationController:
         try:
             logger.info(f"Updating calculation for user {user.id if user else 'anonymous'}")
             logger.debug(f"Update data: {serializer.model_dump()}")
-            
+
             updated = await serializer.update()
             logger.debug(f"Calculation updated: id={updated.id}")
 
@@ -103,9 +105,11 @@ class CalculationController:
         """Get the calculated result for a calculation request."""
         try:
             logger.info(f"Getting calculation result: id={calculation.id}")
-            logger.debug(f"Calculation details: start={calculation.start_date}, end={calculation.end_date}, "
-                        f"salary={calculation.avg_salary}, category={calculation.category}")
-            
+            logger.debug(
+                f"Calculation details: start={calculation.start_date}, end={calculation.end_date}, "
+                f"salary={calculation.avg_salary}, category={calculation.category}"
+            )
+
             # Convert dates if needed
             start_dt = calculation.start_date
             end_dt = calculation.end_date
@@ -125,10 +129,10 @@ class CalculationController:
             # Calculate components
             severance = calculate_severance_pay(calculation.avg_salary, seniority_years)
             logger.debug(f"Severance: {severance} FCFA")
-            
+
             notice_period = calculate_notice_period_pay(calculation.avg_salary, calculation.category)
             logger.debug(f"Notice period: {notice_period} FCFA")
-            
+
             leave = calculate_leave_pay(
                 calculation.daily_salary or (calculation.avg_salary / 26.0),
                 calculation.remaining_leave_days,
@@ -136,7 +140,9 @@ class CalculationController:
             logger.debug(f"Leave pay: {leave} FCFA")
 
             total = severance + notice_period + leave
-            logger.debug(f"Total calculated: {total} FCFA (severance={severance} + notice={notice_period} + leave={leave})")
+            logger.debug(
+                f"Total calculated: {total} FCFA (severance={severance} + notice={notice_period} + leave={leave})"
+            )
 
             # Build breakdown details
             breakdown: dict[str, Any] = {

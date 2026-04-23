@@ -126,7 +126,7 @@ def calculate_severance_pay(avg_salary: float, seniority_years: float) -> float:
     """
     try:
         logger.debug(f"Calculating severance: avg_salary={avg_salary}, seniority_years={seniority_years}")
-        
+
         if seniority_years < 1:
             logger.info(f"No severance for seniority < 1 year: {seniority_years}")
             return 0.0
@@ -230,13 +230,13 @@ def calculate_notice_period_pay(avg_salary: float, category: WorkerCategory) -> 
     """
     try:
         logger.debug(f"Calculating notice period: avg_salary={avg_salary}, category={category}")
-        
+
         months = 1
         if category == WorkerCategory.AGENT_MAITRISE:
             months = 2
         elif category == WorkerCategory.CADRE:
             months = 3
-        
+
         result = avg_salary * months
         logger.info(f"Notice period pay calculated: {result} FCFA ({months} months for {category.value})")
         return result

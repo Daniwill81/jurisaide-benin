@@ -25,6 +25,24 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
     fetchDossier();
   }, [id]);
 
+  const handleStatusChange = async () => {
+    const newStatus = dossier.status === 'ouvert' ? 'fermé' : 'ouvert';
+    try {
+      await apiFetch(`/dossiers/${id}/`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          ...dossier,
+          status: newStatus,
+          // We need to pass calculation_requests as IDs
+          calculation_requests: dossier.calculation_requests.map((c: any) => c.id)
+        }),
+      });
+      setDossier({ ...dossier, status: newStatus });
+    } catch (err) {
+      console.error('Failed to update status', err);
+    }
+  };
+
   if (loading) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="pt-32 text-center">Chargement...</div></div>;
   if (!dossier) return <div className="min-h-screen bg-slate-50"><Navbar /><div className="pt-32 text-center text-red-500 font-bold">Dossier introuvable</div></div>;
 
@@ -32,11 +50,25 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <main className="max-w-7xl mx-auto pt-24 pb-12 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-            {dossier.status}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+              dossier.status === 'ouvert' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-slate-100 text-slate-500 border-slate-200'
+            }`}>
+              {dossier.status}
+            </div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{dossier.title}</h1>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">{dossier.title}</h1>
+          <button
+            onClick={handleStatusChange}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+              dossier.status === 'ouvert' 
+                ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100'
+            }`}
+          >
+            {dossier.status === 'ouvert' ? 'Clôturer le dossier' : 'Réouvrir le dossier'}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

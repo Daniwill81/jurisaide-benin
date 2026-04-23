@@ -9,8 +9,9 @@ from datetime import datetime
 from typing import Any, Optional
 
 from beanie import PydanticObjectId
-from sap.beanie import Document
 from pydantic import BaseModel, Field
+
+from sap.beanie import Document
 
 from api.models.enums import ContractType, TerminationReason, WorkerCategory
 
@@ -36,6 +37,7 @@ class CalculationRequest(Document):
     employee_name: str
     employee_email: Optional[str] = None
     employee_id: Optional[str] = None
+    employee_phone: Optional[str] = None
 
     # Employment Period
     start_date: datetime

@@ -1,12 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Navbar() {
     const pathname = usePathname();
+    const router = useRouter();
     const { user, logout } = useAuth();
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/auth/login');
+    };
 
     const navLinks = [
         { name: 'Dashboard', href: '/dashboard' },
@@ -52,7 +58,7 @@ export default function Navbar() {
                                 </div>
                                 <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
                                 <button
-                                    onClick={logout}
+                                    onClick={handleLogout}
                                     className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl transition-all"
                                 >
                                     Déconnexion

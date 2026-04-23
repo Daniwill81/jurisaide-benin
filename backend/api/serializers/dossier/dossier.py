@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Any, List, Optional
 
-from pydantic import Field
 from beanie import PydanticObjectId
+from pydantic import Field
 
 from sap.fastapi import ObjectSerializer, WriteObjectSerializer
 
@@ -44,10 +44,13 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     def get_calculation_requests(cls, instance: Dossier) -> List[CalculationSerializer]:
         """Filter out unfetched calculation requests."""
         from sap.beanie import Link
+
+        from api.models.calcul.calcul import CalculationRequest
+
         return [
             CalculationSerializer.read(req)
             for req in instance.calculation_requests
-            if not isinstance(req, Link)
+            if isinstance(req, CalculationRequest)
         ]
 
 

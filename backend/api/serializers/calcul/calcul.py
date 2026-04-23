@@ -9,9 +9,9 @@ import logging
 from typing import Any, Optional
 
 import pydantic
+from beanie import PydanticObjectId
 from fastapi import Request
 
-from beanie import PydanticObjectId
 from sap.fastapi import ObjectSerializer, WriteObjectSerializer
 from sap.fastapi.pagination import CursorInfo, PaginatedData
 
@@ -37,6 +37,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     employee_name: str
     employee_email: Optional[str] = None
     employee_id: Optional[str] = None
+    employee_phone: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
     avg_salary: float
@@ -139,6 +140,7 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
     employee_name: str
     employee_email: Optional[pydantic.EmailStr] = None
     employee_id: Optional[str] = None
+    employee_phone: Optional[str] = None
     start_date: datetime.date
     end_date: datetime.date
     avg_salary: float = pydantic.Field(gt=0, description="Salaire moyen mensuel en FCFA")
@@ -189,9 +191,11 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
         """Calculate the result based on the serializer data."""
         try:
             logger.info(f"Calculating result for employee: {self.employee_name}")
-            logger.debug(f"Calculation input: start={self.start_date}, end={self.end_date}, "
-                        f"salary={self.avg_salary}, category={self.category}")
-            
+            logger.debug(
+                f"Calculation input: start={self.start_date}, end={self.end_date}, "
+                f"salary={self.avg_salary}, category={self.category}"
+            )
+
             # Convert dates to datetime if they're date objects
             start_dt = (
                 datetime.datetime.combine(self.start_date, datetime.time())
@@ -211,10 +215,10 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
             # Calculate components
             severance = calculate_severance_pay(self.avg_salary, seniority_years)
             logger.debug(f"Severance: {severance} FCFA")
-            
+
             notice_period = calculate_notice_period_pay(self.avg_salary, self.category)
             logger.debug(f"Notice period: {notice_period} FCFA")
-            
+
             leave = calculate_leave_pay(self.daily_salary or (self.avg_salary / 26.0), self.remaining_leave_days)
             logger.debug(f"Leave pay: {leave} FCFA")
 
@@ -299,13 +303,14 @@ class WriteCalculationSerializer(WriteObjectSerializer[CalculationRequest]):
         try:
             logger.info(f"Updating calculation: {self.employee_name}")
             logger.debug(f"Update fields: start={self.start_date}, end={self.end_date}, salary={self.avg_salary}")
-            
+
             assert self.instance
 
             data_to_update = {
                 "employee_name": self.employee_name,
                 "employee_email": self.employee_email,
                 "employee_id": self.employee_id,
+                "employee_phone": self.employee_phone,
                 "start_date": (
                     datetime.datetime.combine(self.start_date, datetime.time())
                     if isinstance(self.start_date, datetime.date)
