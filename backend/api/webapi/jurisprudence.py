@@ -4,9 +4,9 @@ from typing import List
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from api.models import User
+from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
 from api.query.jurisprudence import JurisprudenceQuery
-from api.models.enums import RoleEnum
 
 logger = logging.getLogger(__name__)
 

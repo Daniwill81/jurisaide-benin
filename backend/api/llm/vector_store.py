@@ -21,16 +21,16 @@ class VectorStoreManager:
     def __init__(self, collection_name: str = "jurisprudence"):
         self.collection_name = collection_name
         self.persist_directory = AppSettings.model_dump().get("VECTOR_DB_PATH", "./data/vector_db")
-        
+
         # Ensure directory exists
         os.makedirs(self.persist_directory, exist_ok=True)
-        
+
         self.client = chromadb.PersistentClient(path=self.persist_directory)
         self.vector_store = Chroma(
             client=self.client,
             collection_name=collection_name,
             embedding_function=embedder.embeddings,
-            persist_directory=self.persist_directory
+            persist_directory=self.persist_directory,
         )
 
     def add_documents(self, texts: List[str], metadatas: List[dict], ids: Optional[List[str]] = None):

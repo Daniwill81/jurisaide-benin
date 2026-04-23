@@ -1,9 +1,9 @@
 import logging
 from typing import Optional
 
-from langchain_mistralai import ChatMistralAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_mistralai import ChatMistralAI
 
 from AppMain.settings import AppSettings
 
@@ -17,17 +17,21 @@ class DisputeClassifier:
 
     def __init__(self):
         api_key = AppSettings.MISTRAL_API_KEY or AppSettings.OPENAI_API_KEY
-        self.llm = ChatMistralAI(
-            mistral_api_key=api_key,
-            model="mistral-small-latest",
-            temperature=0
+        self.llm = ChatMistralAI(mistral_api_key=api_key, model="mistral-small-latest", temperature=0)
+
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "Tu es un expert en droit du travail béninois. Ta mission est de classifier le type de litige en fonction des détails fournis.",
+                ),
+                (
+                    "user",
+                    "Détails du dossier: {details}\n\nClassifie ce litige en une catégorie courte (ex: Licenciement abusif, Rupture conventionnelle, Démission sous contrainte). Réponds uniquement par le nom de la catégorie.",
+                ),
+            ]
         )
-        
-        self.prompt = ChatPromptTemplate.from_messages([
-            ("system", "Tu es un expert en droit du travail béninois. Ta mission est de classifier le type de litige en fonction des détails fournis."),
-            ("user", "Détails du dossier: {details}\n\nClassifie ce litige en une catégorie courte (ex: Licenciement abusif, Rupture conventionnelle, Démission sous contrainte). Réponds uniquement par le nom de la catégorie.")
-        ])
-        
+
         self.chain = self.prompt | self.llm | StrOutputParser()
 
     async def classify(self, details: str) -> str:
@@ -37,7 +41,7 @@ class DisputeClassifier:
         try:
             if not details:
                 return "Non spécifié"
-            
+
             result = await self.chain.ainvoke({"details": details})
             return result.strip()
         except Exception as e:

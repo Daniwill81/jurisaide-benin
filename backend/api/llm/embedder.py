@@ -17,11 +17,8 @@ class Embedder:
         api_key = AppSettings.MISTRAL_API_KEY or AppSettings.OPENAI_API_KEY
         if not api_key:
             logger.warning("MISTRAL_API_KEY is not set correctly in .env")
-        
-        self.embeddings = MistralAIEmbeddings(
-            mistral_api_key=api_key,
-            model="mistral-embed"
-        )
+
+        self.embeddings = MistralAIEmbeddings(mistral_api_key=api_key, model="mistral-embed")
 
     def embed_query(self, text: str) -> List[float]:
         """

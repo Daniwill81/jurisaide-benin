@@ -47,6 +47,7 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     def read(cls, instance: Dossier, exclude: set[str] | None = None) -> "DossierSerializer":
         """Read the dossier from the model, including calculation requests."""
         import logging
+
         logger = logging.getLogger(__name__)
         res = super().read(instance, exclude=exclude)
         calcs = cls.get_calculation_requests(instance)
@@ -58,7 +59,7 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     def get_calculation_requests(cls, instance: Dossier) -> List[CalculationSerializer]:
         """Filter out unfetched calculation requests and handle prefetched links."""
         from sap.beanie import Link
-        
+
         res = []
         if not instance.calculation_requests:
             return res
@@ -69,12 +70,12 @@ class DossierSerializer(ObjectSerializer[Dossier]):
                 if hasattr(req, "doc") and req.doc:
                     res.append(CalculationSerializer.read(req.doc, include_results=True))
                 continue
-                
+
             # If it's already a CalculationRequest object
             if type(req).__name__ == "CalculationRequest":
                 res.append(CalculationSerializer.read(req, include_results=True))
                 continue
-                
+
             # Fallback for already serialized dicts
             if isinstance(req, dict) and "employee_name" in req:
                 res.append(req)
@@ -95,6 +96,7 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
     async def create(self, **kwargs: Any) -> Dossier:
         request_user = kwargs.get("request_user")
         from sap.beanie.link import DBRef, Link
+
         from api.models.calcul import CalculationRequest
 
         instance = Dossier(
@@ -108,7 +110,10 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
             work_history=[WorkHistory(**wh) for wh in self.work_history],
             dispute_details=DisputeDetails(**self.dispute_details) if self.dispute_details else None,
             calculation_requests=[
-                Link(ref=DBRef(collection="calculation_request", id=PydanticObjectId(cid)), document_class=CalculationRequest)
+                Link(
+                    ref=DBRef(collection="calculation_request", id=PydanticObjectId(cid)),
+                    document_class=CalculationRequest,
+                )
                 for cid in self.calculation_requests
             ],
         )
@@ -118,6 +123,7 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
     async def update(self, **kwargs: Any) -> Dossier:
         assert self.instance
         from sap.beanie.link import DBRef, Link
+
         from api.models.calcul import CalculationRequest
 
         self.instance.title = self.title
@@ -128,12 +134,14 @@ class WriteDossierSerializer(WriteObjectSerializer[Dossier]):
         self.instance.client_phone = self.client_phone
         self.instance.work_history = [WorkHistory(**wh) for wh in self.work_history]
         self.instance.dispute_details = DisputeDetails(**self.dispute_details) if self.dispute_details else None
-        
+
         # Explicitly convert IDs to Link objects to ensure they are saved in MongoDB
         self.instance.calculation_requests = [
-            Link(ref=DBRef(collection="calculation_request", id=PydanticObjectId(cid)), document_class=CalculationRequest)
+            Link(
+                ref=DBRef(collection="calculation_request", id=PydanticObjectId(cid)), document_class=CalculationRequest
+            )
             for cid in self.calculation_requests
         ]
-        
+
         await self.instance.save()
         return self.instance

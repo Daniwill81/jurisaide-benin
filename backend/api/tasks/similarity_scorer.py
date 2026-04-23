@@ -22,15 +22,15 @@ async def score_dossier_similarity(dossier_id: str):
         query_text = ""
         if dossier.dispute_details:
             query_text = dossier.dispute_details.description
-        
+
         if not query_text:
             query_text = dossier.title
-            
+
         similar_cases = await JurisprudenceQuery.find_similar_cases(query_text, k=5)
-        
+
         dossier.similar_cases = similar_cases
         await dossier.save()
-        
+
         logger.info(f"Similarity scoring completed for dossier {dossier_id}. Found {len(similar_cases)} cases.")
     except Exception as e:
         logger.error(f"Error scoring similarity for dossier {dossier_id}: {str(e)}")
@@ -57,13 +57,13 @@ async def process_dossier_ai(dossier_id: str):
 
         # Summarize
         dossier.summary = await summarizer.summarize(content)
-        
+
         # Classify
         dossier.classification = await classifier.classify(content)
-        
+
         await dossier.save()
         logger.info(f"AI processing completed for dossier {dossier_id}")
-        
+
         # Also run similarity search
         await score_dossier_similarity(dossier_id)
     except Exception as e:

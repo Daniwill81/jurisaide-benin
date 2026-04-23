@@ -105,20 +105,20 @@ class CalculationController:
         """Get the calculated result for a calculation request and save it if not present."""
         try:
             logger.info(f"Getting calculation result: id={calculation.id}")
-            
+
             # Import here to avoid circular imports
+            from api.llm.classifier import classifier
+            from api.llm.rag_retriever import rag_retriever
             from api.xlib.labor_code import (
                 calculate_leave_pay,
                 calculate_notice_period_pay,
                 calculate_seniority,
                 calculate_severance_pay,
             )
-            from api.llm.rag_retriever import rag_retriever
-            from api.llm.classifier import classifier
 
             # Calculate seniority
             seniority_years = calculate_seniority(calculation.start_date, calculation.end_date)
-            
+
             # Calculate components
             severance = calculate_severance_pay(calculation.avg_salary, seniority_years)
             notice_period = calculate_notice_period_pay(calculation.avg_salary, calculation.category)
@@ -130,7 +130,7 @@ class CalculationController:
 
             # AI Enrichement: RAG Citations
             citations = await rag_retriever.get_citations(calculation)
-            
+
             # AI Enrichement: Dispute Classification
             details = f"Catégorie: {calculation.category.value}. Raison: {calculation.termination_reason.value if calculation.termination_reason else 'N/A'}. Ancienneté: {seniority_years} ans."
             classification = await classifier.classify(details)
@@ -158,7 +158,7 @@ class CalculationController:
                 "citations": citations,
                 "dispute_classification": classification,
             }
-            
+
             articles = {
                 "severance": "Art. 44",
                 "notice": "Art. 53",
@@ -186,7 +186,7 @@ class CalculationController:
                 leave_pay=round(leave, 2),
                 total=round(total, 2),
                 breakdown=breakdown,
-                articles=articles
+                articles=articles,
             )
             return result
         except Exception as e:

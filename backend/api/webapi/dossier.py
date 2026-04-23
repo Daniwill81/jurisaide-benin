@@ -1,8 +1,7 @@
 import logging
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
-from api.tasks.similarity_scorer import process_dossier_ai
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 
 from sap.fastapi.pagination import CursorInfo, PaginatedData
 
@@ -10,6 +9,7 @@ from api.models import Dossier, User
 from api.models.enums import RoleEnum
 from api.models.user.auth import user_auth
 from api.serializers.dossier import DossierSerializer, WriteDossierSerializer
+from api.tasks.similarity_scorer import process_dossier_ai
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ async def retrieve(
                         logger.error(f"  Req {i} fetched: {type(fetched)}")
                 except Exception as e:
                     logger.error(f"  Error fetching req {i}: {e}")
-            
+
             await instance.fetch_all_links()
             logger.error(f"DEBUG: Dossier {pk} final calculation_requests count: {len(instance.calculation_requests)}")
         if not instance:

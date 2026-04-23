@@ -9,6 +9,7 @@ class LegalCase(Document):
     """
     Represents a historical legal case (jurisprudence) used for similarity matching.
     """
+
     case_title: str
     court_name: str
     decision_date: datetime
@@ -17,10 +18,10 @@ class LegalCase(Document):
     legal_reasoning: str
     outcome: str
     tags: List[str] = []
-    
+
     # Vector store ID (if indexed)
     vector_id: Optional[str] = None
-    
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -31,6 +32,7 @@ class LegalCase(Document):
             "court_name",
             "decision_date",
         ]
+
 
 # Alias for Step 6 requirements
 CasSimilaire = LegalCase

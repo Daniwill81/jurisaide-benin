@@ -23,27 +23,29 @@ class RAGRetriever:
                 f"Licenciement d'un {calculation.category.value}",
                 f"Contrat {calculation.contract_type.value}",
             ]
-            
+
             if calculation.termination_reason:
                 query_parts.append(f"Motif: {calculation.termination_reason.value}")
-            
+
             query_parts.append(f"Ancienneté: {calculation.seniority_years} ans")
-            
+
             query = " ".join(query_parts)
             logger.info(f"RAG Query: {query}")
-            
+
             # Search in vector store
             docs = articles_store.similarity_search(query, k=3)
-            
+
             citations = []
             for doc in docs:
-                citations.append({
-                    "law": doc.metadata.get("law_name", "Loi 98-004"),
-                    "article": doc.metadata.get("article_number", "Inconnu"),
-                    "content": doc.page_content,
-                    "relevance_score": 0.95, # Chroma doesn't return scores easily here without extra steps
-                })
-                
+                citations.append(
+                    {
+                        "law": doc.metadata.get("law_name", "Loi 98-004"),
+                        "article": doc.metadata.get("article_number", "Inconnu"),
+                        "content": doc.page_content,
+                        "relevance_score": 0.95,  # Chroma doesn't return scores easily here without extra steps
+                    }
+                )
+
             return citations
         except Exception as e:
             logger.error(f"Error retrieving citations: {str(e)}")
