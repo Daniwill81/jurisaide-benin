@@ -77,7 +77,21 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Description</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-slate-900">Résumé IA</h2>
+                {dossier.classification && (
+                  <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full uppercase tracking-widest">
+                    {dossier.classification}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-600 leading-relaxed italic border-l-4 border-indigo-100 pl-4">
+                {dossier.summary || 'Résumé en cours de génération...'}
+              </p>
+            </section>
+
+            <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Description complète</h2>
               <p className="text-slate-600 leading-relaxed">{dossier.description || 'Aucune description fournie.'}</p>
             </section>
 
@@ -131,6 +145,31 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
                 <TimelineItem date={new Date(dossier.created).toLocaleDateString()} text="Ouverture du dossier" active />
               </div>
             </section>
+
+            {dossier.similar_cases?.length > 0 && (
+              <section className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                <h2 className="font-bold text-slate-900 mb-4">Cas Similaires</h2>
+                <div className="space-y-4">
+                  {dossier.similar_cases.map((case_item: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-xs font-bold text-slate-900 truncate pr-2">{case_item.title}</p>
+                        <span className="text-[8px] font-black text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+                          {Math.round(case_item.score * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 line-clamp-2">{case_item.summary}</p>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => router.push('/jurisprudence')}
+                  className="w-full mt-4 py-2 text-xs font-bold text-indigo-600 border border-indigo-100 rounded-xl hover:bg-indigo-50 transition-all"
+                >
+                  Voir toute la jurisprudence
+                </button>
+              </section>
+            )}
           </div>
         </div>
       </main>

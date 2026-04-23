@@ -106,9 +106,6 @@ class CalculationController:
         try:
             logger.info(f"Getting calculation result: id={calculation.id}")
             
-            # If results are already stored, we can return them (unless they need recalculation)
-            # For now, let's always calculate to ensure accuracy, but update the document
-            
             # Import here to avoid circular imports
             from api.xlib.labor_code import (
                 calculate_leave_pay,
@@ -116,6 +113,8 @@ class CalculationController:
                 calculate_seniority,
                 calculate_severance_pay,
             )
+            from api.llm.rag_retriever import rag_retriever
+            from api.llm.classifier import classifier
 
             # Calculate seniority
             seniority_years = calculate_seniority(calculation.start_date, calculation.end_date)
@@ -128,6 +127,13 @@ class CalculationController:
                 calculation.remaining_leave_days,
             )
             total = severance + notice_period + leave
+
+            # AI Enrichement: RAG Citations
+            citations = await rag_retriever.get_citations(calculation)
+            
+            # AI Enrichement: Dispute Classification
+            details = f"Catégorie: {calculation.category.value}. Raison: {calculation.termination_reason.value if calculation.termination_reason else 'N/A'}. Ancienneté: {seniority_years} ans."
+            classification = await classifier.classify(details)
 
             # Build breakdown details
             breakdown: dict[str, Any] = {
@@ -149,6 +155,8 @@ class CalculationController:
                     "remaining_days": calculation.remaining_leave_days,
                     "daily_rate": round(calculation.daily_salary or (calculation.avg_salary / 26.0), 2),
                 },
+                "citations": citations,
+                "dispute_classification": classification,
             }
             
             articles = {

@@ -1,7 +1,8 @@
 import logging
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
+from api.tasks.similarity_scorer import process_dossier_ai
 
 from sap.fastapi.pagination import CursorInfo, PaginatedData
 
@@ -46,6 +47,7 @@ async def listing(
 async def create(
     request: Request,
     serializer_write: WriteDossierSerializer,
+    background_tasks: BackgroundTasks,
     request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
 ) -> DossierSerializer:
     """Create a new dossier."""
@@ -54,6 +56,7 @@ async def create(
         logger.debug(f"Serializer data: {serializer_write.model_dump()}")
         instance = await serializer_write.create(request_user=request_user)
         logger.info(f"Dossier created with id: {instance.id}")
+        background_tasks.add_task(process_dossier_ai, str(instance.id))
         return DossierSerializer.read(instance)
     except Exception as e:
         logger.error(f"Error creating dossier: {str(e)}", exc_info=True)
@@ -100,6 +103,7 @@ async def retrieve(
 async def update(
     pk: str,
     serializer_write: WriteDossierSerializer,
+    background_tasks: BackgroundTasks,
     request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
 ) -> DossierSerializer:
     """Update a dossier."""
@@ -115,6 +119,7 @@ async def update(
         await serializer_write.update()
         await instance.fetch_all_links()
         logger.info(f"Dossier {pk} updated successfully")
+        background_tasks.add_task(process_dossier_ai, pk)
         return DossierSerializer.read(instance)
     except HTTPException:
         raise

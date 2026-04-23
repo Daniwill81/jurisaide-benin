@@ -72,6 +72,7 @@ class _Settings(pydantic_settings.BaseSettings):
 
     # AI Configuration
     OPENAI_API_KEY: str = ""
+    MISTRAL_API_KEY: str = ""
     VECTOR_DB_PATH: str = "./data/vector_db"
 
     @property

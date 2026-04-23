@@ -37,6 +37,9 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     work_history: List[WorkHistorySerializer]
     dispute_details: Optional[DisputeDetailsSerializer] = None
     calculation_requests: List[CalculationSerializer] = Field(default_factory=list)
+    summary: Optional[str] = None
+    classification: Optional[str] = None
+    similar_cases: List[dict] = Field(default_factory=list)
     created: datetime
     updated: datetime
 

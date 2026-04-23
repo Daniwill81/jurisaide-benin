@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from langchain_openai import ChatOpenAI
+from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -16,9 +16,10 @@ class DisputeClassifier:
     """
 
     def __init__(self):
-        self.llm = ChatOpenAI(
-            openai_api_key=AppSettings.OPENAI_API_KEY,
-            model="gpt-4o-mini",
+        api_key = AppSettings.MISTRAL_API_KEY or AppSettings.OPENAI_API_KEY
+        self.llm = ChatMistralAI(
+            mistral_api_key=api_key,
+            model="mistral-small-latest",
             temperature=0
         )
         

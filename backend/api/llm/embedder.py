@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from langchain_openai import OpenAIEmbeddings
+from langchain_mistralai import MistralAIEmbeddings
 
 from AppMain.settings import AppSettings
 
@@ -10,16 +10,17 @@ logger = logging.getLogger(__name__)
 
 class Embedder:
     """
-    Utility class to handle text embeddings using OpenAI.
+    Utility class to handle text embeddings using Mistral.
     """
 
     def __init__(self):
-        if not AppSettings.OPENAI_API_KEY or AppSettings.OPENAI_API_KEY == "your_openai_api_key_here":
-            logger.warning("OPENAI_API_KEY is not set correctly in .env")
+        api_key = AppSettings.MISTRAL_API_KEY or AppSettings.OPENAI_API_KEY
+        if not api_key:
+            logger.warning("MISTRAL_API_KEY is not set correctly in .env")
         
-        self.embeddings = OpenAIEmbeddings(
-            openai_api_key=AppSettings.OPENAI_API_KEY,
-            model="text-embedding-3-small"
+        self.embeddings = MistralAIEmbeddings(
+            mistral_api_key=api_key,
+            model="mistral-embed"
         )
 
     def embed_query(self, text: str) -> List[float]:
