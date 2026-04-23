@@ -31,9 +31,12 @@ export default function DossierDetailPage({ params }: { params: Promise<{ id: st
       await apiFetch(`/dossiers/${id}/`, {
         method: 'PUT',
         body: JSON.stringify({
-          ...dossier,
+          title: dossier.title,
+          description: dossier.description,
           status: newStatus,
-          // We need to pass calculation_requests as IDs
+          client_name: dossier.client_name,
+          client_email: dossier.client_email,
+          client_phone: dossier.client_phone,
           calculation_requests: dossier.calculation_requests.map((c: any) => c.id)
         }),
       });

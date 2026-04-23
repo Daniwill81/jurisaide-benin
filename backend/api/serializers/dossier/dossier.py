@@ -41,8 +41,19 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     updated: datetime
 
     @classmethod
+    def read(cls, instance: Dossier, exclude: set[str] | None = None) -> "DossierSerializer":
+        """Read the dossier from the model, including calculation requests."""
+        import logging
+        logger = logging.getLogger(__name__)
+        res = super().read(instance, exclude=exclude)
+        calcs = cls.get_calculation_requests(instance)
+        logger.error(f"SERIALIZER DEBUG: Fetched {len(calcs)} calculations for dossier {instance.id}")
+        res.calculation_requests = calcs
+        return res
+
+    @classmethod
     def get_calculation_requests(cls, instance: Dossier) -> List[CalculationSerializer]:
-        """Filter out unfetched calculation requests."""
+        """Filter out unfetched calculation requests and handle prefetched links."""
         from sap.beanie import Link
         
         res = []
@@ -50,12 +61,19 @@ class DossierSerializer(ObjectSerializer[Dossier]):
             return res
 
         for req in instance.calculation_requests:
-            # Check by class name to be safe against import/module mismatches
-            # or if it's a fetched Document
-            if type(req).__name__ == "CalculationRequest" or (not isinstance(req, (Link, str)) and hasattr(req, "id")):
-                res.append(CalculationSerializer.read(req))
-            # If it's already a dict (partially serialized)
-            elif isinstance(req, dict) and "employee_name" in req:
+            # If it's a Link object, check if it has been prefetched
+            if isinstance(req, Link):
+                if hasattr(req, "doc") and req.doc:
+                    res.append(CalculationSerializer.read(req.doc, include_results=True))
+                continue
+                
+            # If it's already a CalculationRequest object
+            if type(req).__name__ == "CalculationRequest":
+                res.append(CalculationSerializer.read(req, include_results=True))
+                continue
+                
+            # Fallback for already serialized dicts
+            if isinstance(req, dict) and "employee_name" in req:
                 res.append(req)
         return res
 

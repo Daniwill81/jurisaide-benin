@@ -69,10 +69,21 @@ async def retrieve(
     try:
         logger.info(f"Retrieving dossier {pk} for user {request_user.id}")
         instance = await Dossier.find_one(
-            Dossier.id == PydanticObjectId(pk), Dossier.user_id == request_user.id
+            Dossier.id == PydanticObjectId(pk), Dossier.user_id == request_user.id, fetch_links=True
         )
         if instance:
+            logger.error(f"DEBUG: Dossier {pk} raw calculation_requests: {instance.calculation_requests}")
+            # Try to fetch them manually one by one if the list seems to contain only links
+            for i, req in enumerate(instance.calculation_requests):
+                try:
+                    if hasattr(req, "fetch"):
+                        fetched = await req.fetch()
+                        logger.error(f"  Req {i} fetched: {type(fetched)}")
+                except Exception as e:
+                    logger.error(f"  Error fetching req {i}: {e}")
+            
             await instance.fetch_all_links()
+            logger.error(f"DEBUG: Dossier {pk} final calculation_requests count: {len(instance.calculation_requests)}")
         if not instance:
             logger.warning(f"Dossier {pk} not found for user {request_user.id}")
             raise HTTPException(status_code=404, detail="Dossier not found")

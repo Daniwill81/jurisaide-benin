@@ -61,8 +61,10 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     articles: Optional[dict[str, str]] = None
 
     @classmethod
-    def read(cls, instance: CalculationRequest, exclude: set[str] | None = None) -> "CalculationSerializer":
-        """Read the calculation request from the model, excluding calculated fields."""
+    def read(cls, instance: CalculationRequest, exclude: set[str] | None = None, include_results: bool = False) -> "CalculationSerializer":
+        """Read the calculation request from the model."""
+        # Fields that are not in the database model must ALWAYS be excluded from super().read
+        # to avoid AttributeError, as they are calculated or provided elsewhere.
         calculated_fields = {
             "seniority_years",
             "severance_pay",
@@ -72,9 +74,44 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
             "breakdown",
             "articles",
         }
+            
         if exclude:
             calculated_fields.update(exclude)
-        return super().read(instance, exclude=calculated_fields)
+            
+        # We always exclude them from the initial model dump
+        serializer = super().read(instance, exclude=calculated_fields)
+        
+        if include_results:
+            from api.xlib.labor_code import (
+                calculate_seniority,
+                calculate_severance_pay,
+                calculate_notice_period_pay,
+                calculate_leave_pay
+            )
+            import datetime
+            
+            # Convert dates
+            start_dt = instance.start_date
+            if isinstance(start_dt, datetime.date) and not isinstance(start_dt, datetime.datetime):
+                start_dt = datetime.datetime.combine(start_dt, datetime.time())
+                
+            end_dt = instance.end_date
+            if isinstance(end_dt, datetime.date) and not isinstance(end_dt, datetime.datetime):
+                end_dt = datetime.datetime.combine(end_dt, datetime.time())
+
+            seniority_years = calculate_seniority(start_dt, end_dt)
+            severance = calculate_severance_pay(instance.avg_salary, seniority_years)
+            notice_period = calculate_notice_period_pay(instance.avg_salary, instance.category)
+            leave = calculate_leave_pay(instance.daily_salary or (instance.avg_salary / 26.0), instance.remaining_leave_days)
+            total = severance + notice_period + leave
+            
+            serializer.seniority_years = round(seniority_years, 2)
+            serializer.severance_pay = round(severance, 2)
+            serializer.notice_period_pay = round(notice_period, 2)
+            serializer.leave_pay = round(leave, 2)
+            serializer.total = round(total, 2)
+            
+        return serializer
 
     @classmethod
     def read_with_result(cls, instance: CalculationRequest, result: "CalculationResult") -> "CalculationSerializer":
