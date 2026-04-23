@@ -34,6 +34,11 @@ class Dossier(Document):
     work_history: List[WorkHistory] = Field(default_factory=list)
     dispute_details: Optional[DisputeDetails] = None
 
+    # AI Generated fields
+    summary: Optional[str] = None
+    classification: Optional[str] = None
+    similar_cases: List[dict] = Field(default_factory=list)
+
     class Settings:
         name = "dossiers"
         indexes = [

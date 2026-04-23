@@ -290,6 +290,26 @@ export default function CalculationDetailPage() {
                     </div>
                   </div>
                 </div>
+                {/* Legal Citations (RAG) */}
+                {(calculation.breakdown as any).citations?.length > 0 && (
+                  <div className="bg-slate-900 rounded-[2rem] shadow-2xl p-8 text-white">
+                    <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                      <div className="w-2 h-6 bg-indigo-500 rounded-full"></div>
+                      Citations Légales Pertinentes
+                    </h3>
+                    <div className="space-y-6">
+                      {(calculation.breakdown as any).citations.map((cite: any, idx: number) => (
+                        <div key={idx} className="border-l-2 border-indigo-500/30 pl-6 py-2">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-indigo-400 font-bold text-xs uppercase tracking-widest">{cite.law}</span>
+                            <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold">{cite.article}</span>
+                          </div>
+                          <p className="text-sm text-slate-300 leading-relaxed italic">"{cite.content}"</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
