@@ -102,18 +102,13 @@ class CalculationController:
     async def get_calculation_result(
         calculation: CalculationRequest,
     ) -> CalculationResult:
-        """Get the calculated result for a calculation request."""
+        """Get the calculated result for a calculation request and save it if not present."""
         try:
             logger.info(f"Getting calculation result: id={calculation.id}")
-            logger.debug(
-                f"Calculation details: start={calculation.start_date}, end={calculation.end_date}, "
-                f"salary={calculation.avg_salary}, category={calculation.category}"
-            )
-
-            # Convert dates if needed
-            start_dt = calculation.start_date
-            end_dt = calculation.end_date
-
+            
+            # If results are already stored, we can return them (unless they need recalculation)
+            # For now, let's always calculate to ensure accuracy, but update the document
+            
             # Import here to avoid circular imports
             from api.xlib.labor_code import (
                 calculate_leave_pay,
@@ -123,26 +118,16 @@ class CalculationController:
             )
 
             # Calculate seniority
-            seniority_years = calculate_seniority(start_dt, end_dt)
-            logger.debug(f"Seniority calculated: {seniority_years} years")
-
+            seniority_years = calculate_seniority(calculation.start_date, calculation.end_date)
+            
             # Calculate components
             severance = calculate_severance_pay(calculation.avg_salary, seniority_years)
-            logger.debug(f"Severance: {severance} FCFA")
-
             notice_period = calculate_notice_period_pay(calculation.avg_salary, calculation.category)
-            logger.debug(f"Notice period: {notice_period} FCFA")
-
             leave = calculate_leave_pay(
                 calculation.daily_salary or (calculation.avg_salary / 26.0),
                 calculation.remaining_leave_days,
             )
-            logger.debug(f"Leave pay: {leave} FCFA")
-
             total = severance + notice_period + leave
-            logger.debug(
-                f"Total calculated: {total} FCFA (severance={severance} + notice={notice_period} + leave={leave})"
-            )
 
             # Build breakdown details
             breakdown: dict[str, Any] = {
@@ -165,6 +150,24 @@ class CalculationController:
                     "daily_rate": round(calculation.daily_salary or (calculation.avg_salary / 26.0), 2),
                 },
             }
+            
+            articles = {
+                "severance": "Art. 44",
+                "notice": "Art. 53",
+                "leave": "Art. 113",
+                "legal_basis": "Loi 98-004 du 27 janvier 1998",
+            }
+
+            # SAVE TO DATABASE for persistent storage
+            calculation.seniority_years = round(seniority_years, 2)
+            calculation.severance_pay = round(severance, 2)
+            calculation.notice_period_pay = round(notice_period, 2)
+            calculation.leave_pay = round(leave, 2)
+            calculation.total = round(total, 2)
+            calculation.breakdown = breakdown
+            calculation.articles = articles
+            await calculation.save()
+            logger.info(f"Persistent results saved for calculation {calculation.id}")
 
             result = CalculationResult(
                 calculation_id=str(calculation.id),
@@ -175,8 +178,8 @@ class CalculationController:
                 leave_pay=round(leave, 2),
                 total=round(total, 2),
                 breakdown=breakdown,
+                articles=articles
             )
-            logger.info(f"Calculation result completed: total={result.total}")
             return result
         except Exception as e:
             logger.error(f"Error calculating result: {str(e)}", exc_info=True)

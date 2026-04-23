@@ -59,6 +59,16 @@ class CalculationRequest(Document):
     user_id: Optional[PydanticObjectId] = None
     status: str = Field(default="pending")  # pending, completed, archived
     notes: Optional[str] = None
+    
+    # Persistent Results (calculated and stored)
+    seniority_years: Optional[float] = None
+    severance_pay: Optional[float] = None
+    notice_period_pay: Optional[float] = None
+    leave_pay: Optional[float] = None
+    total: Optional[float] = None
+    breakdown: Optional[dict[str, Any]] = None
+    articles: Optional[dict[str, str]] = None
+    
     audit_trail: list[AuditTrail] = Field(default_factory=list)
 
     class Settings:

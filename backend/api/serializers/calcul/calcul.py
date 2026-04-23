@@ -82,34 +82,45 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
         serializer = super().read(instance, exclude=calculated_fields)
         
         if include_results:
-            from api.xlib.labor_code import (
-                calculate_seniority,
-                calculate_severance_pay,
-                calculate_notice_period_pay,
-                calculate_leave_pay
-            )
-            import datetime
-            
-            # Convert dates
-            start_dt = instance.start_date
-            if isinstance(start_dt, datetime.date) and not isinstance(start_dt, datetime.datetime):
-                start_dt = datetime.datetime.combine(start_dt, datetime.time())
+            # PRIORITIZE STORED RESULTS if they exist in the DB
+            if instance.total is not None:
+                serializer.seniority_years = instance.seniority_years
+                serializer.severance_pay = instance.severance_pay
+                serializer.notice_period_pay = instance.notice_period_pay
+                serializer.leave_pay = instance.leave_pay
+                serializer.total = instance.total
+                serializer.breakdown = instance.breakdown
+                serializer.articles = instance.articles
+            else:
+                # FALLBACK TO RECALCULATION for older records or if missing
+                from api.xlib.labor_code import (
+                    calculate_seniority,
+                    calculate_severance_pay,
+                    calculate_notice_period_pay,
+                    calculate_leave_pay
+                )
+                import datetime
                 
-            end_dt = instance.end_date
-            if isinstance(end_dt, datetime.date) and not isinstance(end_dt, datetime.datetime):
-                end_dt = datetime.datetime.combine(end_dt, datetime.time())
+                # Convert dates
+                start_dt = instance.start_date
+                if isinstance(start_dt, datetime.date) and not isinstance(start_dt, datetime.datetime):
+                    start_dt = datetime.datetime.combine(start_dt, datetime.time())
+                    
+                end_dt = instance.end_date
+                if isinstance(end_dt, datetime.date) and not isinstance(end_dt, datetime.datetime):
+                    end_dt = datetime.datetime.combine(end_dt, datetime.time())
 
-            seniority_years = calculate_seniority(start_dt, end_dt)
-            severance = calculate_severance_pay(instance.avg_salary, seniority_years)
-            notice_period = calculate_notice_period_pay(instance.avg_salary, instance.category)
-            leave = calculate_leave_pay(instance.daily_salary or (instance.avg_salary / 26.0), instance.remaining_leave_days)
-            total = severance + notice_period + leave
-            
-            serializer.seniority_years = round(seniority_years, 2)
-            serializer.severance_pay = round(severance, 2)
-            serializer.notice_period_pay = round(notice_period, 2)
-            serializer.leave_pay = round(leave, 2)
-            serializer.total = round(total, 2)
+                seniority_years = calculate_seniority(start_dt, end_dt)
+                severance = calculate_severance_pay(instance.avg_salary, seniority_years)
+                notice_period = calculate_notice_period_pay(instance.avg_salary, instance.category)
+                leave = calculate_leave_pay(instance.daily_salary or (instance.avg_salary / 26.0), instance.remaining_leave_days)
+                total = severance + notice_period + leave
+                
+                serializer.seniority_years = round(seniority_years, 2)
+                serializer.severance_pay = round(severance, 2)
+                serializer.notice_period_pay = round(notice_period, 2)
+                serializer.leave_pay = round(leave, 2)
+                serializer.total = round(total, 2)
             
         return serializer
 

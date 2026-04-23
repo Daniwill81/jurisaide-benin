@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrency, formatDate } from '@/lib/formatters';
+import { apiFetch } from '@/lib/api';
 import Link from 'next/link';
 
 interface Calculation {
@@ -50,15 +51,7 @@ export default function CalculationDetailPage() {
     const fetchCalculation = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/v1/calculations/${id}/`, {
-          headers: {
-            'Authorization': `Basic ${btoa(`${authKey}:${authKey}`)}`,
-          },
-        });
-
-        if (!response.ok) throw new Error('Failed to fetch calculation');
-
-        const data = await response.json();
+        const data = await apiFetch<Calculation>(`/calculations/${id}/`);
         setCalculation(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -75,14 +68,9 @@ export default function CalculationDetailPage() {
 
     try {
       setDeleting(true);
-      const response = await fetch(`/api/v1/calculations/${id}/`, {
+      await apiFetch(`/calculations/${id}/`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Basic ${btoa(`${authKey}:${authKey}`)}`,
-        },
       });
-
-      if (!response.ok) throw new Error('Failed to delete calculation');
 
       router.push('/calculateur');
     } catch (err) {
@@ -190,67 +178,117 @@ export default function CalculationDetailPage() {
           {/* Center & Right - Results */}
           <div className="lg:col-span-2">
             {/* Total Card */}
-            <div className="bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg shadow-lg p-8 text-white mb-8">
-              <p className="text-indigo-100 text-sm uppercase tracking-wide mb-2">Total Indemnities</p>
-              <h2 className="text-5xl font-bold mb-8">{formatCurrency(calculation.total)}</h2>
+            <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[2rem] shadow-2xl p-8 text-white mb-8 border border-white/10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+              <p className="text-indigo-300 text-sm font-bold uppercase tracking-[0.2em] mb-2">Total à percevoir</p>
+              <h2 className="text-5xl md:text-6xl font-black mb-10 tracking-tight">{formatCurrency(calculation.total)}</h2>
 
-              <div className="grid grid-cols-3 gap-6">
-                <div>
-                  <p className="text-indigo-100 text-xs uppercase tracking-wide mb-1">Severance</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/10">
+                <div className="pb-4 md:pb-0 md:pr-6">
+                  <p className="text-indigo-300/60 text-xs font-bold uppercase tracking-widest mb-1">Licenciement</p>
                   <p className="text-2xl font-bold">{formatCurrency(calculation.severance_pay)}</p>
                 </div>
-                <div>
-                  <p className="text-indigo-100 text-xs uppercase tracking-wide mb-1">Notice Period</p>
+                <div className="py-4 md:py-0 md:px-6">
+                  <p className="text-indigo-300/60 text-xs font-bold uppercase tracking-widest mb-1">Préavis</p>
                   <p className="text-2xl font-bold">{formatCurrency(calculation.notice_period_pay)}</p>
                 </div>
-                <div>
-                  <p className="text-indigo-100 text-xs uppercase tracking-wide mb-1">Leave</p>
+                <div className="pt-4 md:pt-0 md:pl-6">
+                  <p className="text-indigo-300/60 text-xs font-bold uppercase tracking-widest mb-1">Congés</p>
                   <p className="text-2xl font-bold">{formatCurrency(calculation.leave_pay)}</p>
                 </div>
               </div>
             </div>
 
             {/* Calculation Details */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Calculation Details</h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Seniority</p>
-                    <p className="text-gray-900 font-medium text-lg">
-                      {calculation.seniority_years.toFixed(1)} years
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Average Salary</p>
-                    <p className="text-gray-900 font-medium text-lg">
-                      {formatCurrency(calculation.avg_salary)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Daily Salary</p>
-                    <p className="text-gray-900 font-medium">
-                      {formatCurrency(calculation.daily_salary)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">Leave Days</p>
-                    <p className="text-gray-900 font-medium">
-                      {calculation.remaining_leave_days} days
-                    </p>
-                  </div>
+            <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 p-8 mb-8 border border-slate-100">
+              <h3 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+                <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
+                Paramètres du calcul
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Ancienneté</p>
+                  <p className="text-slate-900 font-black text-xl">{calculation.seniority_years.toFixed(2)} <span className="text-sm font-normal text-slate-500">ans</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Salaire Moyen</p>
+                  <p className="text-slate-900 font-black text-xl">{formatCurrency(calculation.avg_salary)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Salaire Jour</p>
+                  <p className="text-slate-900 font-bold">{formatCurrency(calculation.daily_salary)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Congés Dus</p>
+                  <p className="text-slate-900 font-bold">{calculation.remaining_leave_days} jours</p>
                 </div>
               </div>
             </div>
 
-            {/* Breakdown */}
+            {/* Breakdown - Professional Design */}
             {calculation.breakdown && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Breakdown</h3>
-                <div className="bg-gray-50 rounded p-4 text-sm max-h-64 overflow-y-auto">
-                  <pre className="text-gray-700 text-xs whitespace-pre-wrap break-words">
-                    {JSON.stringify(calculation.breakdown, null, 2)}
-                  </pre>
+              <div className="space-y-6 mb-8">
+                <h3 className="text-xl font-black text-slate-900 px-4 flex items-center gap-2">
+                  <div className="w-2 h-6 bg-indigo-600 rounded-full"></div>
+                  Détail du décompte
+                </h3>
+                
+                {/* Severance Breakdown */}
+                <div className="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-slate-100 overflow-hidden">
+                  <div className="bg-slate-50 px-8 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <span className="font-bold text-slate-900">Indemnité de Licenciement</span>
+                    <span className="text-xs font-mono text-slate-400">Art. 44 - Loi 98-004</span>
+                  </div>
+                  <div className="p-8">
+                    <div className="space-y-4">
+                      {Object.entries((calculation.breakdown as any).severance_pay?.details || {}).map(([key, detail]: [string, any]) => (
+                        <div key={key} className="flex justify-between items-center text-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-indigo-400"></div>
+                            <span className="text-slate-600">Tranche {key.includes('1_to_5') ? '1 à 5 ans' : key.includes('6_to_10') ? '6 à 10 ans' : 'plus de 10 ans'}</span>
+                          </div>
+                          <div className="font-semibold text-slate-900">
+                            {detail.years} ans × {detail.rate}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="pt-4 mt-4 border-t border-slate-50 flex justify-between items-center font-black text-lg text-indigo-600">
+                        <span>Total partiel</span>
+                        <span>{formatCurrency((calculation.breakdown as any).severance_pay?.amount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notice & Leave Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Notice */}
+                  <div className="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-slate-100 p-8">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="font-bold text-slate-900">Préavis</span>
+                      <span className="text-[10px] font-mono text-slate-400">Art. 53</span>
+                    </div>
+                    <div className="text-sm text-slate-600 mb-4">
+                      Base : <span className="font-semibold text-slate-900">{(calculation.breakdown as any).notice_period_pay?.months} mois</span> de salaire
+                    </div>
+                    <div className="font-black text-2xl text-indigo-600">
+                      {formatCurrency((calculation.breakdown as any).notice_period_pay?.amount)}
+                    </div>
+                  </div>
+
+                  {/* Leave */}
+                  <div className="bg-white rounded-[2rem] shadow-lg shadow-slate-200/50 border border-slate-100 p-8">
+                    <div className="flex justify-between items-start mb-6">
+                      <span className="font-bold text-slate-900">Congés Payés</span>
+                      <span className="text-[10px] font-mono text-slate-400">Art. 113</span>
+                    </div>
+                    <div className="text-sm text-slate-600 mb-4">
+                      <span className="font-semibold text-slate-900">{(calculation.breakdown as any).leave_pay?.remaining_days} jours</span> × {formatCurrency((calculation.breakdown as any).leave_pay?.daily_rate)}/j
+                    </div>
+                    <div className="font-black text-2xl text-indigo-600">
+                      {formatCurrency((calculation.breakdown as any).leave_pay?.amount)}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
