@@ -14,21 +14,20 @@ httpx==0.28.1
 aiofiles==24.1.0
 
 # Databases: MongoDB
-beanie==1.26.0
+beanie==1.27.0
 motor==3.6.0
 pymongo==4.9.2
 
 # Web Framework: FastAPI
-pydantic-core==2.33.1
-pydantic[email]==2.11.2
+pydantic[email]==2.9.2
 pydantic-settings==2.10.1
 python-multipart==0.0.12
 python-dotenv
 python-dateutil
 reportlab
-fastapi==0.115.0
+fastapi==0.120.1
 uvicorn==0.31.0
-PyJWT==2.9.0
+PyJWT==2.10.0
 itsdangerous==2.2.0
 passlib==1.7.4
 bcrypt>=4.0.1
@@ -41,7 +40,7 @@ google-auth-httplib2
 
 # Utils
 requests==2.32.5
-sapx==0.3.5
+sapx==0.4.11
 aioboto3==13.1.1
 Pillow==10.4.0
 
@@ -60,3 +59,4 @@ langchain-mistralai>=1.1.2
 chromadb>=0.5.13
 pypdf>=5.0.1
 tiktoken>=0.8.0
+mistralai==1.5.0
