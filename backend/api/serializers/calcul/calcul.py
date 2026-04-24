@@ -62,7 +62,11 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
 
     @classmethod
     def read(
-        cls, instance: CalculationRequest, exclude: set[str] | None = None, include_results: bool = False
+        cls,
+        instance: CalculationRequest,
+        exclude: set[str] | None = None,
+        context: dict[str, Any] | None = None,
+        include_results: bool = False,
     ) -> "CalculationSerializer":
         """Read the calculation request from the model."""
         # Fields that are not in the database model must ALWAYS be excluded from super().read
@@ -81,7 +85,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
             calculated_fields.update(exclude)
 
         # We always exclude them from the initial model dump
-        serializer = super().read(instance, exclude=calculated_fields)
+        serializer = super().read(instance, exclude=calculated_fields, context=context)
 
         if include_results:
             # PRIORITIZE STORED RESULTS if they exist in the DB

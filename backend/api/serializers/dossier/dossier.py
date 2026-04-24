@@ -44,19 +44,19 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     updated: datetime
 
     @classmethod
-    def read(cls, instance: Dossier, exclude: set[str] | None = None) -> "DossierSerializer":
+    def read(cls, instance: Dossier, exclude: set[str] | None = None, context: dict[str, Any] | None = None) -> "DossierSerializer":
         """Read the dossier from the model, including calculation requests."""
         import logging
 
         logger = logging.getLogger(__name__)
-        res = super().read(instance, exclude=exclude)
-        calcs = cls.get_calculation_requests(instance)
+        res = super().read(instance, exclude=exclude, context=context)
+        calcs = cls.get_calculation_requests(instance, context=context)
         logger.error(f"SERIALIZER DEBUG: Fetched {len(calcs)} calculations for dossier {instance.id}")
         res.calculation_requests = calcs
         return res
 
     @classmethod
-    def get_calculation_requests(cls, instance: Dossier) -> List[CalculationSerializer]:
+    def get_calculation_requests(cls, instance: Dossier, context: dict[str, Any] | None = None) -> List[CalculationSerializer]:
         """Filter out unfetched calculation requests and handle prefetched links."""
         from sap.beanie import Link
 
@@ -68,12 +68,12 @@ class DossierSerializer(ObjectSerializer[Dossier]):
             # If it's a Link object, check if it has been prefetched
             if isinstance(req, Link):
                 if hasattr(req, "doc") and req.doc:
-                    res.append(CalculationSerializer.read(req.doc, include_results=True))
+                    res.append(CalculationSerializer.read(req.doc, include_results=True, context=context))
                 continue
 
             # If it's already a CalculationRequest object
             if type(req).__name__ == "CalculationRequest":
-                res.append(CalculationSerializer.read(req, include_results=True))
+                res.append(CalculationSerializer.read(req, include_results=True, context=context))
                 continue
 
             # Fallback for already serialized dicts

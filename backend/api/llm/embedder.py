@@ -1,31 +1,37 @@
 import logging
 from typing import List
-
-from langchain_mistralai import MistralAIEmbeddings
-
-from AppMain.settings import AppSettings
+import ollama
 
 logger = logging.getLogger(__name__)
 
 
 class Embedder:
     """
-    Utility class to handle text embeddings using Mistral.
+    Utility class to handle text embeddings using Ollama natively.
     """
 
-    def __init__(self):
-        api_key = AppSettings.MISTRAL_API_KEY or AppSettings.OPENAI_API_KEY
-        if not api_key:
-            logger.warning("MISTRAL_API_KEY is not set correctly in .env")
+    def __init__(self, model: str = "nomic-embed-text"):
+        self.model = model
+        logger.info(f"Initializing Embedder with Ollama model: {self.model}")
 
-        self.embeddings = MistralAIEmbeddings(mistral_api_key=api_key, model="mistral-embed")
+    def _check_model(self):
+        """Check if the model is available in Ollama."""
+        try:
+            ollama.show(self.model)
+            return True
+        except ollama.ResponseError:
+            logger.warning(f"Ollama model '{self.model}' not found. Please run 'ollama pull {self.model}'")
+            return False
 
     def embed_query(self, text: str) -> List[float]:
         """
         Embed a single query string.
         """
         try:
-            return self.embeddings.embed_query(text)
+            if not self._check_model():
+                return []
+            response = ollama.embeddings(model=self.model, prompt=text)
+            return response["embedding"]
         except Exception as e:
             logger.error(f"Error embedding query: {str(e)}")
             raise
@@ -35,7 +41,13 @@ class Embedder:
         Embed a list of document strings.
         """
         try:
-            return self.embeddings.embed_documents(texts)
+            if not self._check_model():
+                return []
+            embeddings = []
+            for text in texts:
+                response = ollama.embeddings(model=self.model, prompt=text)
+                embeddings.append(response["embedding"])
+            return embeddings
         except Exception as e:
             logger.error(f"Error embedding documents: {str(e)}")
             raise
