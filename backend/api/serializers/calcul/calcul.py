@@ -59,6 +59,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
     total: Optional[float] = None
     breakdown: Optional[dict[str, Any]] = None
     articles: Optional[dict[str, str]] = None
+    dossier_id: Optional[PydanticObjectId] = None
 
     @classmethod
     def read(
@@ -79,6 +80,7 @@ class CalculationSerializer(ObjectSerializer[CalculationRequest]):
             "total",
             "breakdown",
             "articles",
+            "dossier_id",
         }
 
         if exclude:

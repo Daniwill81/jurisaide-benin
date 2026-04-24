@@ -145,3 +145,57 @@ async def destroy(
     except Exception as e:
         logger.error(f"Error deleting dossier {pk}: {str(e)}", exc_info=True)
         raise
+
+
+@router.get("/stats/dashboard/", status_code=status.HTTP_200_OK)
+async def dashboard_stats(
+    request_user: User = Depends(user_auth.require([RoleEnum.ADMIN, RoleEnum.PUSER])),
+) -> dict:
+    """Get dashboard statistics for the current user."""
+    try:
+        from api.models.calcul import CalculationRequest
+        from api.models.enums import TerminationReason
+        
+        logger.info(f"Fetching dashboard stats for user {request_user.id}")
+        
+        # We base stats on calculation requests as they are more frequent and have explicit termination reasons
+        total_calcs = await CalculationRequest.find(CalculationRequest.user_id == request_user.id).count()
+        
+        if total_calcs == 0:
+            # Fallback to dossiers if no calculations
+            total_dossiers = await Dossier.find(Dossier.user_id == request_user.id).count()
+            if total_dossiers == 0:
+                return {"licenciements": 0, "demissions": 0, "total": 0}
+            
+            licenciements = await Dossier.find(
+                Dossier.user_id == request_user.id,
+                {"dispute_details.nature": "licenciement"}
+            ).count()
+            demissions = await Dossier.find(
+                Dossier.user_id == request_user.id,
+                {"dispute_details.nature": "demission"}
+            ).count()
+            total = total_dossiers
+        else:
+            licenciements = await CalculationRequest.find(
+                CalculationRequest.user_id == request_user.id,
+                CalculationRequest.termination_reason == TerminationReason.LICENCIEMENT
+            ).count()
+            demissions = await CalculationRequest.find(
+                CalculationRequest.user_id == request_user.id,
+                CalculationRequest.termination_reason == TerminationReason.DEMISSION
+            ).count()
+            total = total_calcs
+        
+        # Calculate percentages
+        licenciements_pct = round((licenciements / total) * 100) if total > 0 else 0
+        demissions_pct = round((demissions / total) * 100) if total > 0 else 0
+        
+        return {
+            "licenciements": licenciements_pct,
+            "demissions": demissions_pct,
+            "total": total
+        }
+    except Exception as e:
+        logger.error(f"Error fetching dashboard stats: {str(e)}", exc_info=True)
+        raise

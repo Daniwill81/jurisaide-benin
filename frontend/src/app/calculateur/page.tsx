@@ -36,6 +36,7 @@ function CalculateurContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dossierId = searchParams.get('dossierId');
+  const isSimulate = searchParams.get('simulate') === 'true';
 
   const [showDossierModal, setShowDossierModal] = useState(false);
   const [clientInfo, setClientInfo] = useState({
@@ -77,7 +78,7 @@ function CalculateurContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await calculate(formData);
+    await calculate(formData, isSimulate);
     nextStep();
   };
 
@@ -243,14 +244,27 @@ function CalculateurContent() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Jours de congés restants</label>
-                    <input
-                      type="number"
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Motif de rupture</label>
+                    <select
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
-                      value={formData.remaining_leave_days}
-                      onChange={e => setFormData({ ...formData, remaining_leave_days: Number(e.target.value) })}
-                    />
+                      value={formData.termination_reason}
+                      onChange={e => setFormData({ ...formData, termination_reason: e.target.value as TerminationReason })}
+                    >
+                      <option value={TerminationReason.LICENCIEMENT}>Licenciement</option>
+                      <option value={TerminationReason.DEMISSION}>Démission</option>
+                      <option value={TerminationReason.RUPTURE_NEGOCIEE}>Rupture Négociée</option>
+                      <option value={TerminationReason.FIN_CONTRAT}>Fin de Contrat</option>
+                    </select>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Jours de congés restants</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    value={formData.remaining_leave_days}
+                    onChange={e => setFormData({ ...formData, remaining_leave_days: Number(e.target.value) })}
+                  />
                 </div>
                 <div className="flex gap-4">
                   <button onClick={prevStep} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">Retour</button>
@@ -288,13 +302,15 @@ function CalculateurContent() {
 
               <div className="flex gap-4">
                 <button onClick={() => { reset(); setStep(1); }} className="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-bold hover:bg-slate-200 transition-all">Nouveau calcul</button>
-                <button
-                  onClick={handleSaveDossier}
-                  disabled={dossierLoading}
-                  className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
-                >
-                  {dossierLoading ? 'Enregistrement...' : 'Sauvegarder le dossier'}
-                </button>
+                {!isSimulate && (
+                  <button
+                    onClick={handleSaveDossier}
+                    disabled={dossierLoading}
+                    className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+                  >
+                    {dossierLoading ? 'Enregistrement...' : 'Sauvegarder le dossier'}
+                  </button>
+                )}
               </div>
             </div>
           )}

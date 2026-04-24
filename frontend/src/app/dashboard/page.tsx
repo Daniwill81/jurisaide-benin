@@ -8,7 +8,12 @@ import { apiFetch } from '@/lib/api';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ dossiers: 0, calculations: 0 });
+  const [stats, setStats] = useState({ 
+    dossiers: 0, 
+    calculations: 0,
+    licenciements: 0,
+    demissions: 0
+  });
   const [recentDossiers, setRecentDossiers] = useState([]);
 
   useEffect(() => {
@@ -16,9 +21,13 @@ export default function DashboardPage() {
       try {
         const dossiersData = await apiFetch<any>('/dossiers/');
         const calculationsData = await apiFetch<any>('/calculations/');
+        const dashboardStats = await apiFetch<any>('/dossiers/stats/dashboard/');
+        
         setStats({
           dossiers: dossiersData.count || 0,
-          calculations: calculationsData.count || 0
+          calculations: calculationsData.count || 0,
+          licenciements: dashboardStats.licenciements || 0,
+          demissions: dashboardStats.demissions || 0
         });
         setRecentDossiers(dossiersData.data?.slice(0, 3) || []);
       } catch (err) {
@@ -87,7 +96,7 @@ export default function DashboardPage() {
               <div className="relative z-10">
                 <h3 className="text-xl font-black mb-2">Simulateur Rapide</h3>
                 <p className="text-indigo-100 text-sm mb-6 leading-relaxed opacity-80">Effectuez une simulation d'indemnités sans créer de dossier complet.</p>
-                <Link href="/calculateur" className="inline-flex items-center justify-center px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-800/20 transition-all active:scale-95">Calculer maintenant</Link>
+                <Link href="/calculateur?simulate=true" className="inline-flex items-center justify-center px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-800/20 transition-all active:scale-95">Calculer maintenant</Link>
               </div>
               <svg className="absolute -right-4 -bottom-4 w-32 h-32 text-indigo-500 opacity-20 transform rotate-12 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" /></svg>
             </section>
@@ -96,18 +105,18 @@ export default function DashboardPage() {
               <h3 className="font-bold text-slate-900 mb-4">Statistiques du mois</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Licenciements</span>
-                  <span className="font-bold text-slate-900">12%</span>
+                   <span className="text-slate-500 font-medium">Licenciements</span>
+                   <span className="font-bold text-slate-900">{stats.licenciements}%</span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: '12%' }}></div>
+                   <div className="h-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ width: `${stats.licenciements}%` }}></div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500 font-medium">Démissions</span>
-                  <span className="font-bold text-slate-900">45%</span>
+                   <span className="text-slate-500 font-medium">Démissions</span>
+                   <span className="font-bold text-slate-900">{stats.demissions}%</span>
                 </div>
                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-500 rounded-full" style={{ width: '45%' }}></div>
+                   <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${stats.demissions}%` }}></div>
                 </div>
               </div>
             </section>

@@ -19,11 +19,12 @@ export function useCalculateur() {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const calculate = async (data: any) => {
+  const calculate = async (data: any, simulate: boolean = false) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiFetch<CalculationResult>('/calculations/', {
+      const endpoint = simulate ? '/calculations/simulate/' : '/calculations/';
+      const response = await apiFetch<CalculationResult>(endpoint, {
         method: 'POST',
         body: JSON.stringify(data),
       });

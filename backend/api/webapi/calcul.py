@@ -4,6 +4,7 @@ Calculation WebAPI.
 RESTful API endpoints for calculation operations.
 """
 
+import datetime
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -120,7 +121,15 @@ async def retrieve(
         result = await CalculationController.get_calculation_result(calculation)
         logger.info(f"Calculation result retrieved for {pk}")
 
-        return CalculationSerializer.read_with_result(calculation, result)
+        serializer = CalculationSerializer.read_with_result(calculation, result)
+        
+        # Find associated dossier_id
+        from api.models.dossier.dossier import Dossier
+        dossier = await Dossier.find_one({"calculation_requests": {"$elemMatch": {"$id": calculation.id}}})
+        if dossier:
+            serializer.dossier_id = dossier.id
+            
+        return serializer
     except HTTPException:
         raise
     except Exception as e:
@@ -156,11 +165,62 @@ async def update(
         result = await CalculationController.get_calculation_result(updated_calculation)
         logger.info(f"Updated calculation result generated for {pk}")
 
-        return CalculationSerializer.read_with_result(updated_calculation, result)
+        serializer = CalculationSerializer.read_with_result(updated_calculation, result)
+        
+        # Find associated dossier_id
+        from api.models.dossier.dossier import Dossier
+        dossier = await Dossier.find_one({"calculation_requests": {"$elemMatch": {"$id": updated_calculation.id}}})
+        if dossier:
+            serializer.dossier_id = dossier.id
+            
+        return serializer
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error updating calculation {pk}: {str(e)}", exc_info=True)
+        raise
+
+
+@router.post("/simulate/", status_code=status.HTTP_200_OK)
+async def simulate(
+    request: Request,
+    serializer_write: WriteCalculationSerializer,
+) -> CalculationSerializer:
+    """
+    Perform a calculation simulation without saving it to the database.
+    
+    This endpoint is intended for quick simulations and visitors.
+    It returns the calculated result but does not create any persistent records.
+    """
+    try:
+        logger.info("Performing calculation simulation (transient)")
+        # Calculate result without saving to DB
+        result = serializer_write.calculate_result()
+        
+        # We create a temporary CalculationRequest instance just for serialization
+        # but we DO NOT call .insert() or .save() on it.
+        temp_instance = CalculationRequest(
+            employee_name=serializer_write.employee_name,
+            employee_email=serializer_write.employee_email,
+            employee_phone=serializer_write.employee_phone,
+            start_date=datetime.datetime.combine(serializer_write.start_date, datetime.time()),
+            end_date=datetime.datetime.combine(serializer_write.end_date, datetime.time()),
+            avg_salary=serializer_write.avg_salary,
+            daily_salary=serializer_write.daily_salary,
+            category=serializer_write.category,
+            contract_type=serializer_write.contract_type,
+            termination_reason=serializer_write.termination_reason,
+            remaining_leave_days=serializer_write.remaining_leave_days,
+            annual_leave_entitlement=serializer_write.annual_leave_entitlement,
+            status="simulated",
+            created=datetime.datetime.utcnow(),
+            updated=datetime.datetime.utcnow()
+        )
+        # Manually set a fake ID if needed by the frontend, or just let it be null/empty
+        # For now we'll just use the serializer to read with result
+        return CalculationSerializer.read_with_result(temp_instance, result)
+    except Exception as e:
+        logger.error(f"Error in simulation: {str(e)}", exc_info=True)
         raise
 
 

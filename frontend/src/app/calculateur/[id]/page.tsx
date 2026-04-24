@@ -31,6 +31,7 @@ interface Calculation {
   total: number;
   breakdown: Record<string, unknown> | null;
   articles: unknown[] | null;
+  dossier_id: string | null;
 }
 
 export default function CalculationDetailPage() {
@@ -72,7 +73,11 @@ export default function CalculationDetailPage() {
         method: 'DELETE',
       });
 
-      router.push('/calculateur');
+      if (calculation?.dossier_id) {
+        router.push(`/dossiers/${calculation.dossier_id}`);
+      } else {
+        router.push('/dossiers');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setDeleting(false);
@@ -102,10 +107,10 @@ export default function CalculationDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
           <p className="text-gray-600 mb-6">{error || 'Calculation not found'}</p>
           <Link
-            href="/calculateur"
+            href={calculation?.dossier_id ? `/dossiers/${calculation.dossier_id}` : '/dossiers'}
             className="text-indigo-600 hover:text-indigo-700 font-medium"
           >
-            ← Back to calculations
+            ← Retour au dossier
           </Link>
         </div>
       </div>
@@ -118,10 +123,10 @@ export default function CalculationDetailPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/calculateur"
+            href={calculation?.dossier_id ? `/dossiers/${calculation.dossier_id}` : '/dossiers'}
             className="text-indigo-600 hover:text-indigo-700 font-medium mb-4 inline-flex items-center"
           >
-            ← Back to calculations
+            ← Retour au dossier
           </Link>
           <h1 className="text-4xl font-bold text-gray-900">{calculation.employee_name}</h1>
           <p className="text-gray-600 mt-2">Calculation ID: {calculation.id}</p>
