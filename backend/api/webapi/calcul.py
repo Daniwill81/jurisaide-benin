@@ -122,13 +122,14 @@ async def retrieve(
         logger.info(f"Calculation result retrieved for {pk}")
 
         serializer = CalculationSerializer.read_with_result(calculation, result)
-        
+
         # Find associated dossier_id
         from api.models.dossier.dossier import Dossier
+
         dossier = await Dossier.find_one({"calculation_requests": {"$elemMatch": {"$id": calculation.id}}})
         if dossier:
             serializer.dossier_id = dossier.id
-            
+
         return serializer
     except HTTPException:
         raise
@@ -166,13 +167,14 @@ async def update(
         logger.info(f"Updated calculation result generated for {pk}")
 
         serializer = CalculationSerializer.read_with_result(updated_calculation, result)
-        
+
         # Find associated dossier_id
         from api.models.dossier.dossier import Dossier
+
         dossier = await Dossier.find_one({"calculation_requests": {"$elemMatch": {"$id": updated_calculation.id}}})
         if dossier:
             serializer.dossier_id = dossier.id
-            
+
         return serializer
     except HTTPException:
         raise
@@ -188,7 +190,7 @@ async def simulate(
 ) -> CalculationSerializer:
     """
     Perform a calculation simulation without saving it to the database.
-    
+
     This endpoint is intended for quick simulations and visitors.
     It returns the calculated result but does not create any persistent records.
     """
@@ -196,7 +198,7 @@ async def simulate(
         logger.info("Performing calculation simulation (transient)")
         # Calculate result without saving to DB
         result = serializer_write.calculate_result()
-        
+
         # We create a temporary CalculationRequest instance just for serialization
         # but we DO NOT call .insert() or .save() on it.
         temp_instance = CalculationRequest(
@@ -214,7 +216,7 @@ async def simulate(
             annual_leave_entitlement=serializer_write.annual_leave_entitlement,
             status="simulated",
             created=datetime.datetime.utcnow(),
-            updated=datetime.datetime.utcnow()
+            updated=datetime.datetime.utcnow(),
         )
         # Manually set a fake ID if needed by the frontend, or just let it be null/empty
         # For now we'll just use the serializer to read with result
