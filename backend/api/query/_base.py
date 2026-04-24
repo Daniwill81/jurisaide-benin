@@ -6,9 +6,19 @@ from fastapi.datastructures import QueryParams
 
 from sap.beanie import prepare_search_string
 from sap.beanie.document import DocT
-from sap.beanie.exceptions import Object404Error
+from fastapi.exceptions import HTTPException
 
 from api.models import User
+
+class Object404Error(HTTPException):
+    """Raise when querying DB returns empty result."""
+
+    status_code: int = 404
+    detail: str = "Object not found"
+
+    def __init__(self, detail: str = ""):
+        """Init exception."""
+        super().__init__(status_code=404, detail=detail or self.detail)
 
 
 def extract_filter_params(filters: typing.Union[dict[str, str | None], QueryParams]) -> dict[str, str | None]:

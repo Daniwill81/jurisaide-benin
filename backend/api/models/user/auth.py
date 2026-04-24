@@ -15,7 +15,7 @@ from fastapi.exceptions import HTTPException
 from starlette.status import HTTP_401_UNAUTHORIZED as HTTP_401
 
 from sap.beanie import Document
-from sap.beanie.exceptions import Object404Error
+
 from sap.fastapi.auth import BasicAuth
 
 from api.models.enums import RoleEnum
@@ -24,6 +24,16 @@ from .user import User
 
 logger_auth = logging.getLogger(__name__)
 
+
+class Object404Error(HTTPException):
+    """Raise when querying DB returns empty result."""
+
+    status_code: int = 404
+    detail: str = "Object not found"
+
+    def __init__(self, detail: str = ""):
+        """Init exception."""
+        super().__init__(status_code=404, detail=detail or self.detail)
 
 class UserAuth(BasicAuth):
     """
