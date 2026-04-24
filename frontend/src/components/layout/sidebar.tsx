@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import Logo from '../common/Logo';
 
 const navLinks = [
   { 
@@ -30,7 +31,7 @@ const navLinks = [
     name: 'Jurisprudence', 
     href: '/jurisprudence', 
     icon: (props: any) => (
-      <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+      <svg {...props} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.5 12.5L11 9l-5 5 3.5 3.5M7 10l-4 4 3 3 4-4M13 15l7 7M15 9l5 5" /></svg>
     )
   },
   { 
@@ -66,12 +67,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="p-6 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2" onClick={onClose}>
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">J</span>
-              </div>
-              <span className="text-xl font-black tracking-tight text-slate-900">JurisAide</span>
-            </Link>
+            <div onClick={onClose}>
+              <Logo />
+            </div>
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>

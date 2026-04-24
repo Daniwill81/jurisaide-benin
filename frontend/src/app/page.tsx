@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Logo from '@/components/common/Logo';
 
 export default function HomePage() {
   return (
@@ -20,12 +21,8 @@ export default function HomePage() {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-                <span className="text-white font-black text-xl">J</span>
-              </div>
-              <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-indigo-900">JurisAide</span>
+              <Logo />
             </motion.div>
             
             <motion.div 
