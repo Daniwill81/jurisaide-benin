@@ -14,16 +14,11 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from api.models.user import User
+from api.controllers.document import DOCUMENT_TYPES, generate_document, get_download_url, list_documents
 from api.models.enums import RoleEnum
+from api.models.user import User
 from api.models.user.auth import user_auth
 from api.serializers.document import DocumentSerializer
-from api.controllers.document import (
-    generate_document,
-    list_documents,
-    get_download_url,
-    DOCUMENT_TYPES,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +47,7 @@ async def generer(
 ) -> DocumentSerializer:
     """Generate a legal PDF document for a given dossier."""
     try:
-        logger.info(
-            f"User {request_user.id} requesting '{body.document_type}' "
-            f"for dossier {body.dossier_id}"
-        )
+        logger.info(f"User {request_user.id} requesting '{body.document_type}' " f"for dossier {body.dossier_id}")
         doc = await generate_document(
             dossier_id=body.dossier_id,
             document_type=body.document_type,

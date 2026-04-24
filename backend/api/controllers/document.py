@@ -12,9 +12,9 @@ from io import BytesIO
 from beanie import PydanticObjectId
 from fpdf import FPDF
 
+from api.models.calcul import CalculationRequest
 from api.models.document.document_genere import DocumentGenere
 from api.models.dossier.dossier import Dossier
-from api.models.calcul import CalculationRequest
 from api.xlib.s3 import minio_client
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,8 @@ def _generate_lettre_licenciement(dossier: Dossier, calc: CalculationRequest | N
     pdf.set_font("Helvetica", "I", 8)
     pdf.set_text_color(100, 100, 140)
     pdf.multi_cell(
-        0, 5,
+        0,
+        5,
         "Document généré automatiquement par JurisAide Bénin. Références légales : "
         "Art. 43–45 (indemnité de licenciement), Art. 53 (préavis), Loi n° 98-004 du 27 janvier 1998.",
         fill=True,
@@ -247,7 +248,8 @@ def _generate_recu_indemnites(dossier: Dossier, calc: CalculationRequest | None)
     pdf.set_font("Helvetica", "I", 8)
     pdf.set_text_color(100, 100, 140)
     pdf.multi_cell(
-        0, 5,
+        0,
+        5,
         "Document généré automatiquement par JurisAide Bénin. Références légales : "
         "Art. 43–45 (indemnité de licenciement), Art. 53 (préavis), Art. 113 (congés payés), "
         "Loi n° 98-004 du 27 janvier 1998.",

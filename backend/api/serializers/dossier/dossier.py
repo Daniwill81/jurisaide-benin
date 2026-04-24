@@ -44,7 +44,9 @@ class DossierSerializer(ObjectSerializer[Dossier]):
     updated: datetime
 
     @classmethod
-    def read(cls, instance: Dossier, exclude: set[str] | None = None, context: dict[str, Any] | None = None) -> "DossierSerializer":
+    def read(
+        cls, instance: Dossier, exclude: set[str] | None = None, context: dict[str, Any] | None = None
+    ) -> "DossierSerializer":
         """Read the dossier from the model, including calculation requests."""
         import logging
 
@@ -56,7 +58,9 @@ class DossierSerializer(ObjectSerializer[Dossier]):
         return res
 
     @classmethod
-    def get_calculation_requests(cls, instance: Dossier, context: dict[str, Any] | None = None) -> List[CalculationSerializer]:
+    def get_calculation_requests(
+        cls, instance: Dossier, context: dict[str, Any] | None = None
+    ) -> List[CalculationSerializer]:
         """Filter out unfetched calculation requests and handle prefetched links."""
         from sap.beanie import Link
 

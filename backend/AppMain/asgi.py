@@ -25,6 +25,8 @@ from starlette.staticfiles import StaticFiles
 from sap.beanie.client import BeanieClient
 from sap.fastapi.middleware import InitBeanieMiddleware  # , LogServerErrorMiddleware
 
+# !! Must be imported first — patches passlib/bcrypt compatibility !!
+import AppMain.compat  # noqa: F401
 from api import models
 from api.webapi import router_api
 
@@ -65,6 +67,7 @@ async def lifespan(current_app: FastAPI) -> typing.AsyncGenerator[None, None]:
 
     # Init Vector DB (Auto-index legal articles if empty)
     from api.llm.vector_store import articles_store
+
     pdf_path = AppSettings.APP_DIR / "docs" / "Loi no 98-004 du 27 janvier 1998.pdf"
     await articles_store.initialize_from_pdf(str(pdf_path))
     yield

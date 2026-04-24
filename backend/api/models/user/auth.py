@@ -15,7 +15,6 @@ from fastapi.exceptions import HTTPException
 from starlette.status import HTTP_401_UNAUTHORIZED as HTTP_401
 
 from sap.beanie import Document
-
 from sap.fastapi.auth import BasicAuth
 
 from api.models.enums import RoleEnum
@@ -34,6 +33,7 @@ class Object404Error(HTTPException):
     def __init__(self, detail: str = ""):
         """Init exception."""
         super().__init__(status_code=404, detail=detail or self.detail)
+
 
 class UserAuth(BasicAuth):
     """

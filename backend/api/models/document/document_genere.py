@@ -31,8 +31,8 @@ class DocumentGenere(Document):
     title: str
 
     # ─── MinIO storage ────────────────────────────────────────────
-    minio_key: str          # e.g. documents/<user_id>/<dossier_id>/lettre.pdf
-    download_url: str       # Full MinIO/presigned URL
+    minio_key: str  # e.g. documents/<user_id>/<dossier_id>/lettre.pdf
+    download_url: str  # Full MinIO/presigned URL
 
     # ─── Timestamps ───────────────────────────────────────────────
     generated_at: datetime = Field(default_factory=datetime.utcnow)

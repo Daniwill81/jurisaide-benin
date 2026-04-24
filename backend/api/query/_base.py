@@ -3,12 +3,13 @@ import typing
 import beanie
 from beanie.odm.queries.find import FindMany
 from fastapi.datastructures import QueryParams
+from fastapi.exceptions import HTTPException
 
 from sap.beanie import prepare_search_string
 from sap.beanie.document import DocT
-from fastapi.exceptions import HTTPException
 
 from api.models import User
+
 
 class Object404Error(HTTPException):
     """Raise when querying DB returns empty result."""
