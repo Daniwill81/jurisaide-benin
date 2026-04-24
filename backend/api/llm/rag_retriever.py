@@ -37,12 +37,13 @@ class RAGRetriever:
 
             citations = []
             for doc in docs:
+                metadata = doc.get("metadata", {})
                 citations.append(
                     {
-                        "law": doc.metadata.get("law_name", "Loi 98-004"),
-                        "article": doc.metadata.get("article_number", "Inconnu"),
-                        "content": doc.page_content,
-                        "relevance_score": 0.95,  # Chroma doesn't return scores easily here without extra steps
+                        "law": metadata.get("law_name", "Loi 98-004"),
+                        "article": metadata.get("article_number", "Inconnu"),
+                        "content": doc.get("page_content", ""),
+                        "relevance_score": 0.95,
                     }
                 )
 

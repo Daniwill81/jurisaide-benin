@@ -174,6 +174,11 @@ class CalculationController:
             calculation.total = round(total, 2)
             calculation.breakdown = breakdown
             calculation.articles = articles
+            
+            # Populate AI fields
+            calculation.dispute_category = classification
+            calculation.ai_citations = citations
+            
             await calculation.save()
             logger.info(f"Persistent results saved for calculation {calculation.id}")
 
@@ -187,6 +192,8 @@ class CalculationController:
                 total=round(total, 2),
                 breakdown=breakdown,
                 articles=articles,
+                dispute_category=classification,
+                ai_citations=citations,
             )
             return result
         except Exception as e:

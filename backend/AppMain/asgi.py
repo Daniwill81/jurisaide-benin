@@ -62,6 +62,11 @@ async def lifespan(current_app: FastAPI) -> typing.AsyncGenerator[None, None]:
 
     # Init main DB
     await initialize_beanie()
+
+    # Init Vector DB (Auto-index legal articles if empty)
+    from api.llm.vector_store import articles_store
+    pdf_path = AppSettings.APP_DIR / "docs" / "Loi no 98-004 du 27 janvier 1998.pdf"
+    await articles_store.initialize_from_pdf(str(pdf_path))
     yield
 
 
