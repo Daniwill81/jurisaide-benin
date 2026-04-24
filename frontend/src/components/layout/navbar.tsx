@@ -19,6 +19,7 @@ export default function Navbar() {
         { name: 'Calculateur', href: '/calculateur' },
         { name: 'Dossiers', href: '/dossiers' },
         { name: 'Jurisprudence', href: '/jurisprudence' },
+        { name: 'Documents', href: '/documents' },
     ];
 
     return (

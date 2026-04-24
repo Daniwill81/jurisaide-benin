@@ -65,10 +65,14 @@ class _Settings(pydantic_settings.BaseSettings):
     CRYPTO_SECRET: str  # a key used for encryption
     TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
 
-    # AWS / object storage
+    # AWS / MinIO object storage
     AWS_ACCESS_KEY_ID: str = ""
     AWS_ACCESS_KEY_SECRET: str = ""
     AWS_REGION: str = "us-east-1"
+
+    # MinIO settings (S3-compatible local object storage)
+    MINIO_ENDPOINT: str = "http://localhost:9000"
+    MINIO_BUCKET: str = "jurisaide-documents"
 
     # AI Configuration
     OPENAI_API_KEY: str = ""
@@ -189,5 +193,6 @@ boto3_session_kwargs: dict[str, typing.Any] = {
     "region_name": AppSettings.AWS_REGION,
 }
 
-# If an explicit endpoint is configured, keep it for client creation later.
+# If an explicit MinIO endpoint is configured, pass it when creating clients.
+# (aioboto3 sessions don't take endpoint_url directly; pass it per-client.)
 boto3_session = aioboto3.Session(**boto3_session_kwargs)
